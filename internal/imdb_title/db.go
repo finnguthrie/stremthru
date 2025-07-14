@@ -265,20 +265,32 @@ var RebuildFTS = func() func() error {
 	return postgresRebuildFTS
 }()
 
-var __sl_query_search_type_movie = fmt.Sprintf(
-	`itf.%s IN ('%s', '%s')`,
-	Column.Type,
+var movieTypes = []IMDBTitleType{
 	IMDBTitleTypeMovie,
 	IMDBTitleTypeTvMovie,
-)
-var __sl_query_search_type_show = fmt.Sprintf(
-	`itf.%s IN ('%s', '%s', '%s', '%s', '%s')`,
-	Column.Type,
+}
+var showTypes = []IMDBTitleType{
 	IMDBTitleTypeShort,
 	IMDBTitleTypeTvMiniSeries,
 	IMDBTitleTypeTvSeries,
 	IMDBTitleTypeTvShort,
 	IMDBTitleTypeTvSpecial,
+}
+
+var __sl_query_search_type_movie = fmt.Sprintf(
+	`itf.%s IN ('%s', '%s')`,
+	Column.Type,
+	movieTypes[0],
+	movieTypes[1],
+)
+var __sl_query_search_type_show = fmt.Sprintf(
+	`itf.%s IN ('%s', '%s', '%s', '%s', '%s')`,
+	Column.Type,
+	showTypes[0],
+	showTypes[1],
+	showTypes[2],
+	showTypes[3],
+	showTypes[4],
 )
 var __sl_query_search_year_eq = fmt.Sprintf(
 	`itf.%s = ?`,

@@ -315,13 +315,19 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 		}
 
 	case "trakt":
-		traktIds := make([]string, len(catalogItems))
+		traktMovieIds := make([]string, 0, len(catalogItems))
+		traktShowIds := make([]string, 0, len(catalogItems))
 		for i := range catalogItems {
-			item := &catalogItems[i]
-			traktIds[i] = strconv.Itoa(item.item.(*trakt.TraktItem).Id)
+			item := catalogItems[i].item.(*trakt.TraktItem)
+			switch item.Type {
+			case trakt.ItemTypeMovie:
+				traktMovieIds = append(traktMovieIds, strconv.Itoa(item.Id))
+			case trakt.ItemTypeShow:
+				traktShowIds = append(traktShowIds, strconv.Itoa(item.Id))
+			}
 		}
 
-		imdbIdByTraktId, err := imdb_title.GetIMDBIdByTraktId(traktIds)
+		movieImdbIdByTraktId, showImdbIdByTraktId, err := imdb_title.GetIMDBIdByTraktId(traktMovieIds, traktShowIds)
 		if err != nil {
 			SendError(w, r, err)
 			return
@@ -329,15 +335,25 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 
 		for i := range catalogItems {
 			item := &catalogItems[i]
-			traktId := traktIds[i]
-			if imdbId, ok := imdbIdByTraktId[traktId]; ok {
-				item.MetaPreview.Id = imdbId
-
-				if rpdbPosterBaseUrl != "" {
-					item.MetaPreview.Poster = rpdbPosterBaseUrl + imdbId + ".jpg?fallback=true"
+			titem := item.item.(*trakt.TraktItem)
+			imdbId := ""
+			switch titem.Type {
+			case trakt.ItemTypeMovie:
+				if id, ok := movieImdbIdByTraktId[strconv.Itoa(titem.Id)]; ok {
+					imdbId = id
 				}
-			} else {
+			case trakt.ItemTypeShow:
+				if id, ok := showImdbIdByTraktId[strconv.Itoa(titem.Id)]; ok {
+					imdbId = id
+				}
+			}
+			if imdbId == "" {
 				continue
+			}
+
+			item.MetaPreview.Id = imdbId
+			if rpdbPosterBaseUrl != "" {
+				item.MetaPreview.Poster = rpdbPosterBaseUrl + imdbId + ".jpg?fallback=true"
 			}
 
 			items = append(items, item.MetaPreview)

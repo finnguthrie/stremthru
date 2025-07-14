@@ -38,41 +38,101 @@ var MapColumn = MapColumnStruct{
 }
 
 var query_get_imdb_id_by_trakt_id = fmt.Sprintf(
-	`SELECT %s, %s FROM %s WHERE %s IN `,
-	MapColumn.IMDBId,
+	`SELECT it.%s, it.%s, itm.%s FROM %s itm JOIN %s it ON it.%s = itm.%s WHERE `,
+	Column.TId,
+	Column.Type,
 	MapColumn.TraktId,
 	MapTableName,
+	TableName,
+	Column.TId,
+	MapColumn.IMDBId,
+)
+var query_get_imdb_id_by_trakt_id_cond_movie = fmt.Sprintf(
+	` it.%s IN (%s) AND itm.%s IN `,
+	Column.Type,
+	fmt.Sprintf(
+		util.RepeatJoin("'%s'", len(movieTypes), ","),
+		movieTypes[0],
+		movieTypes[1],
+	),
+	MapColumn.TraktId,
+)
+var query_get_imdb_id_by_trakt_id_cond_show = fmt.Sprintf(
+	` it.%s IN (%s) AND itm.%s IN `,
+	Column.Type,
+	fmt.Sprintf(
+		util.RepeatJoin("'%s'", len(showTypes), ","),
+		showTypes[0],
+		showTypes[1],
+		showTypes[2],
+		showTypes[3],
+		showTypes[4],
+	),
 	MapColumn.TraktId,
 )
 
-func GetIMDBIdByTraktId(traktIds []string) (map[string]string, error) {
-	count := len(traktIds)
-	if count == 0 {
-		return nil, nil
+func GetIMDBIdByTraktId(traktMovieIds, traktShowIds []string) (map[string]string, map[string]string, error) {
+	movieCount := len(traktMovieIds)
+	showCount := len(traktShowIds)
+	if movieCount+showCount == 0 {
+		return nil, nil, nil
 	}
 
-	query := query_get_imdb_id_by_trakt_id + "(" + util.RepeatJoin("?", count, ",") + ")"
-	args := make([]any, count)
-	for i := range traktIds {
-		args[i] = traktIds[i]
+	args := make([]any, movieCount+showCount)
+	var query strings.Builder
+	query.WriteString(query_get_imdb_id_by_trakt_id)
+	if movieCount > 0 {
+		query.WriteString("(")
+		query.WriteString(query_get_imdb_id_by_trakt_id_cond_movie)
+		query.WriteString("(")
+		query.WriteString(util.RepeatJoin("?", movieCount, ","))
+		query.WriteString("))")
+		for i := range traktMovieIds {
+			args[i] = traktMovieIds[i]
+		}
+		if showCount > 0 {
+			query.WriteString(" OR ")
+		}
 	}
-	rows, err := db.Query(query, args...)
+	if showCount > 0 {
+		query.WriteString("(")
+		query.WriteString(query_get_imdb_id_by_trakt_id_cond_show)
+		query.WriteString("(")
+		query.WriteString(util.RepeatJoin("?", showCount, ","))
+		query.WriteString("))")
+		for i := range traktShowIds {
+			args[movieCount+i] = traktShowIds[i]
+		}
+	}
+
+	rows, err := db.Query(query.String(), args...)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer rows.Close()
 
-	imdbIdByTraktId := make(map[string]string, count)
+	movieImdbIdByTraktId := make(map[string]string, movieCount)
+	showImdbIdByTraktId := make(map[string]string, showCount)
 	for rows.Next() {
 		var imdbId string
+		var imdbType IMDBTitleType
 		var traktId string
-		if err := rows.Scan(&imdbId, &traktId); err != nil {
-			return nil, err
+		if err := rows.Scan(&imdbId, &imdbType, &traktId); err != nil {
+			return nil, nil, err
 		}
-		imdbIdByTraktId[traktId] = imdbId
+		switch imdbType {
+		case movieTypes[0], movieTypes[1]:
+			movieImdbIdByTraktId[traktId] = imdbId
+		case showTypes[0], showTypes[1], showTypes[2], showTypes[3], showTypes[4]:
+			showImdbIdByTraktId[traktId] = imdbId
+		}
 	}
 
-	return imdbIdByTraktId, nil
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
+	}
+
+	return movieImdbIdByTraktId, showImdbIdByTraktId, nil
 }
 
 func RecordMappingFromMDBList(tx *db.Tx, imdbId, tmdbId, tvdbId, traktId, malId string) error {
