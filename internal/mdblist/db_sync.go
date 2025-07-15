@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/MunifTanjim/stremthru/internal/config"
@@ -15,7 +16,12 @@ func getListCacheKey(l *MDBListList) string {
 	return l.Id
 }
 
+var syncListMutex sync.Mutex
+
 func syncList(l *MDBListList, apiKey string) error {
+	syncListMutex.Lock()
+	defer syncListMutex.Unlock()
+
 	isWatchlist := l.IsWatchlist()
 
 	var list *List

@@ -67,7 +67,7 @@ func (l *TraktList) IsUserRecommendations() bool {
 }
 
 func (l *TraktList) IsStale() bool {
-	return time.Now().After(l.UpdatedAt.Add(config.Integration.Trakt.ListStaleTime))
+	return time.Now().After(l.UpdatedAt.Add(config.Integration.Trakt.ListStaleTime + util.GetRandomDuration(5*time.Second, 5*time.Minute)))
 }
 
 func (l *TraktList) ShouldPersist() bool {

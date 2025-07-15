@@ -124,11 +124,11 @@ func getListCacheKey(l *AniListList) string {
 	return l.Id
 }
 
-var listFetchMutex sync.Mutex
+var syncListMutex sync.Mutex
 
 func syncList(l *AniListList) error {
-	listFetchMutex.Lock()
-	defer listFetchMutex.Unlock()
+	syncListMutex.Lock()
+	defer syncListMutex.Unlock()
 
 	var list *List
 	var err error

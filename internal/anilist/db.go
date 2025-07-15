@@ -58,7 +58,7 @@ func (l *AniListList) GetDisplayName() string {
 }
 
 func (l *AniListList) IsStale() bool {
-	return time.Now().After(l.UpdatedAt.Add(config.Integration.AniList.ListStaleTime))
+	return time.Now().After(l.UpdatedAt.Add(config.Integration.AniList.ListStaleTime + util.GetRandomDuration(5*time.Second, 5*time.Minute)))
 }
 
 type ListColumnStruct struct {

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/MunifTanjim/stremthru/internal/cache"
@@ -28,7 +29,12 @@ func getListCacheKey(l *TraktList, tokenId string) string {
 	return l.Id
 }
 
+var syncListMutex sync.Mutex
+
 func syncList(l *TraktList, tokenId string) error {
+	syncListMutex.Lock()
+	defer syncListMutex.Unlock()
+
 	isDynamic, isStandard, isUserRecommendations := l.IsDynamic(), l.IsStandard(), l.IsUserRecommendations()
 
 	client := GetAPIClient(tokenId)
