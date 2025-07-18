@@ -139,16 +139,18 @@ func (ud UserData) fetchStream(ctx *context.StoreContext, r *http.Request, rType
 	}
 
 	isCachedByHash := map[string]string{}
+	hasErrByStoreCode := map[string]struct{}{}
 	if len(hashes) > 0 {
 		cmRes := ud.CheckMagnet(&store.CheckMagnetParams{
 			Magnets:  hashes,
 			ClientIP: ctx.ClientIP,
 			SId:      stremId,
 		}, log)
-		if cmRes.HasErr {
+		if cmRes.HasErr && len(cmRes.ByHash) == 0 {
 			return nil, errors.Join(cmRes.Err...)
 		}
 		isCachedByHash = cmRes.ByHash
+		hasErrByStoreCode = cmRes.HasErrByStoreCode
 	}
 
 	cachedStreams := []stremio.Stream{}
@@ -189,7 +191,7 @@ func (ud UserData) fetchStream(ctx *context.StoreContext, r *http.Request, rType
 					s := &stores[i]
 					storeName := s.Store.GetName()
 					storeCode := strings.ToUpper(string(storeName.Code()))
-					if storeCode == "ED" {
+					if _, hasErr := hasErrByStoreCode[storeCode]; hasErr || storeCode == "ED" {
 						continue
 					}
 

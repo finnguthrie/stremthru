@@ -161,10 +161,11 @@ func (ud *UserDataStores) GetUser() storesResult[*store.User] {
 }
 
 type storesCheckMagnetData struct {
-	ByHash map[string]string
-	Err    []error
-	HasErr bool
-	m      sync.Mutex
+	ByHash            map[string]string
+	Err               []error
+	HasErr            bool
+	HasErrByStoreCode map[string]struct{}
+	m                 sync.Mutex
 }
 
 func (ud *UserDataStores) CheckMagnet(params *store.CheckMagnetParams, log *slog.Logger) *storesCheckMagnetData {
@@ -172,9 +173,10 @@ func (ud *UserDataStores) CheckMagnet(params *store.CheckMagnetParams, log *slog
 
 	storeCount := len(ms)
 	res := storesCheckMagnetData{
-		ByHash: map[string]string{},
-		Err:    make([]error, storeCount),
-		HasErr: false,
+		ByHash:            map[string]string{},
+		Err:               make([]error, storeCount),
+		HasErr:            false,
+		HasErrByStoreCode: map[string]struct{}{},
 	}
 
 	firstStore := ms[0]
@@ -187,16 +189,17 @@ func (ud *UserDataStores) CheckMagnet(params *store.CheckMagnetParams, log *slog
 		SId:      params.SId,
 	}
 	cmParams.APIKey = firstStore.AuthToken
+	storeCode := strings.ToUpper(string(firstStore.Store.GetName().Code()))
 	if cmRes, err := firstStore.Store.CheckMagnet(cmParams); err != nil {
 		log.Error("Failed to check magnet", "store", firstStore.Store.GetName(), "error", err)
 		res.Err[0] = err
 		res.HasErr = true
+		res.HasErrByStoreCode[storeCode] = struct{}{}
 
 		if storeCount > 1 {
 			missingHashes = params.Magnets
 		}
 	} else {
-		storeCode := strings.ToUpper(string(firstStore.Store.GetName().Code()))
 		for i := range cmRes.Items {
 			item := cmRes.Items[i]
 			if item.Status == store.MagnetStatusCached {
@@ -231,15 +234,16 @@ func (ud *UserDataStores) CheckMagnet(params *store.CheckMagnetParams, log *slog
 			}
 			cmParams.APIKey = s.AuthToken
 			cmRes, err := s.Store.CheckMagnet(cmParams)
+			storeCode := strings.ToUpper(string(s.Store.GetName().Code()))
 			if err != nil {
 				log.Warn("Failed to check magnet", "store", s.Store.GetName(), "error", err)
 				res.Err[idx] = err
 				res.HasErr = true
+				res.HasErrByStoreCode[storeCode] = struct{}{}
 			} else {
 				res.m.Lock()
 				defer res.m.Unlock()
 
-				storeCode := strings.ToUpper(string(s.Store.GetName().Code()))
 				for _, item := range cmRes.Items {
 					if _, found := res.ByHash[item.Hash]; !found && item.Status == store.MagnetStatusCached {
 						res.ByHash[item.Hash] = storeCode
