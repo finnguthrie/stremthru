@@ -112,17 +112,19 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 	isP2P := ud.IsP2P()
 
 	isCachedByHash := map[string]string{}
+	hasErrByStoreCode := map[string]struct{}{}
 	if !isP2P && len(hashes) > 0 {
 		cmRes := ud.CheckMagnet(&store.CheckMagnetParams{
 			Magnets:  hashes,
 			ClientIP: ctx.ClientIP,
 			SId:      id,
 		}, log)
-		if cmRes.HasErr {
+		if cmRes.HasErr && len(cmRes.ByHash) == 0 {
 			SendError(w, r, errors.Join(cmRes.Err...))
 			return
 		}
 		isCachedByHash = cmRes.ByHash
+		hasErrByStoreCode = cmRes.HasErrByStoreCode
 	}
 
 	streamBaseUrl := ExtractRequestBaseURL(r).JoinPath("/stremio/torz", eud, "_/strem", id)
@@ -270,7 +272,7 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 				s := &stores[i]
 				storeName := s.Store.GetName()
 				storeCode := storeName.Code()
-				if storeCode == store.StoreCodeEasyDebrid {
+				if _, hasErr := hasErrByStoreCode[strings.ToUpper(string(storeCode))]; hasErr || storeCode == store.StoreCodeEasyDebrid {
 					continue
 				}
 
