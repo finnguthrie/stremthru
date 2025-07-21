@@ -18,12 +18,13 @@ import (
 )
 
 type File struct {
-	Name   string `json:"n"`
-	Idx    int    `json:"i"`
-	Size   int64  `json:"s"`
-	SId    string `json:"sid,omitempty"`
-	ASId   string `json:"asid,omitempty"`
-	Source string `json:"src,omitempty"`
+	Name      string `json:"n"`
+	Idx       int    `json:"i"`
+	Size      int64  `json:"s"`
+	SId       string `json:"sid,omitempty"`
+	ASId      string `json:"asid,omitempty"`
+	Source    string `json:"src,omitempty"`
+	VideoHash string `json:"vhash,omitempty"`
 }
 
 type Files []File
@@ -60,37 +61,40 @@ func (arr Files) ToStoreMagnetFile() []store.MagnetFile {
 const TableName = "torrent_stream"
 
 type TorrentStream struct {
-	Hash   string       `json:"h"`
-	Name   string       `json:"n"`
-	Idx    int          `json:"i"`
-	Size   int64        `json:"s"`
-	SId    string       `json:"sid"`
-	ASId   string       `json:"asid"`
-	Source string       `json:"src"`
-	CAt    db.Timestamp `json:"cat"`
-	UAt    db.Timestamp `json:"uat"`
+	Hash      string       `json:"h"`
+	Name      string       `json:"n"`
+	Idx       int          `json:"i"`
+	Size      int64        `json:"s"`
+	SId       string       `json:"sid"`
+	ASId      string       `json:"asid"`
+	Source    string       `json:"src"`
+	VideoHash string       `json:"vhash,omitempty"`
+	CAt       db.Timestamp `json:"cat"`
+	UAt       db.Timestamp `json:"uat"`
 }
 
 var Column = struct {
-	Hash   string
-	Name   string
-	Idx    string
-	Size   string
-	SId    string
-	ASId   string
-	Source string
-	CAt    string
-	UAt    string
+	Hash      string
+	Name      string
+	Idx       string
+	Size      string
+	SId       string
+	ASId      string
+	Source    string
+	VideoHash string
+	CAt       string
+	UAt       string
 }{
-	Hash:   "h",
-	Name:   "n",
-	Idx:    "i",
-	Size:   "s",
-	SId:    "sid",
-	ASId:   "asid",
-	Source: "src",
-	CAt:    "cat",
-	UAt:    "uat",
+	Hash:      "h",
+	Name:      "n",
+	Idx:       "i",
+	Size:      "s",
+	SId:       "sid",
+	ASId:      "asid",
+	Source:    "src",
+	VideoHash: "vhash",
+	CAt:       "cat",
+	UAt:       "uat",
 }
 
 var Columns = []string{
@@ -101,6 +105,7 @@ var Columns = []string{
 	Column.SId,
 	Column.ASId,
 	Column.Source,
+	Column.VideoHash,
 	Column.CAt,
 	Column.UAt,
 }
@@ -166,7 +171,7 @@ func GetFilesByHashes(hashes []string) (map[string]Files, error) {
 		hashPlaceholders[i] = "?"
 	}
 
-	rows, err := db.Query("SELECT h, "+db.FnJSONGroupArray+"("+db.FnJSONObject+"('i', i, 'n', n, 's', s, 'sid', sid, 'asid', asid, 'src', src)) AS files FROM "+TableName+" WHERE h IN ("+strings.Join(hashPlaceholders, ",")+") GROUP BY h", args...)
+	rows, err := db.Query("SELECT h, "+db.FnJSONGroupArray+"("+db.FnJSONObject+"('i', i, 'n', n, 's', s, 'sid', sid, 'asid', asid, 'src', src, 'vhash', vhash)) AS files FROM "+TableName+" WHERE h IN ("+strings.Join(hashPlaceholders, ",")+") GROUP BY h", args...)
 	if err != nil {
 		return nil, err
 	}
@@ -215,11 +220,12 @@ var record_streams_query_before_values = fmt.Sprintf(
 		Column.Size,
 		Column.SId,
 		Column.Source,
+		Column.VideoHash,
 	),
 )
-var record_streams_query_values_placeholder = fmt.Sprintf("(%s)", util.RepeatJoin("?", 6, ","))
+var record_streams_query_values_placeholder = fmt.Sprintf("(%s)", util.RepeatJoin("?", 7, ","))
 var record_streams_query_on_conflict = fmt.Sprintf(
-	" ON CONFLICT (%s,%s) DO UPDATE SET %s, %s, %s, %s, uat = ",
+	" ON CONFLICT (%s,%s) DO UPDATE SET %s, %s, %s, %s, %s, %s = %s",
 	Column.Hash,
 	Column.Name,
 	fmt.Sprintf(
@@ -235,9 +241,15 @@ var record_streams_query_on_conflict = fmt.Sprintf(
 		Column.SId, Column.SId, Column.SId, Column.SId,
 	),
 	fmt.Sprintf(
+		"%s = CASE WHEN ts.%s = '' THEN EXCLUDED.%s ELSE ts.%s END",
+		Column.VideoHash, Column.VideoHash, Column.VideoHash, Column.VideoHash,
+	),
+	fmt.Sprintf(
 		"%s = CASE WHEN (EXCLUDED.%s = 'mfn' AND ts.%s != 'mfn') OR EXCLUDED.%s = '' THEN ts.%s ELSE EXCLUDED.%s END",
 		Column.Source, Column.Source, Column.Source, Column.Source, Column.Source, Column.Source,
 	),
+	Column.UAt,
+	db.CurrentTimestamp,
 )
 
 func Record(items []InsertData, discardIdx bool) {
@@ -263,7 +275,7 @@ func Record(items []InsertData, discardIdx bool) {
 			key := item.Hash + ":" + item.Name
 			if _, seen := seenFileMap[key]; !seen {
 				seenFileMap[key] = struct{}{}
-				args = append(args, item.Hash, item.Name, idx, item.Size, sid, item.Source)
+				args = append(args, item.Hash, item.Name, idx, item.Size, sid, item.Source, item.VideoHash)
 			} else {
 				log.Warn("skipped duplicate file", "hash", item.Hash, "name", item.Name)
 				count--
@@ -271,7 +283,7 @@ func Record(items []InsertData, discardIdx bool) {
 		}
 		query := record_streams_query_before_values +
 			util.RepeatJoin(record_streams_query_values_placeholder, count, ",") +
-			record_streams_query_on_conflict + db.CurrentTimestamp
+			record_streams_query_on_conflict
 		_, err := db.Exec(query, args...)
 		if err != nil {
 			log.Error("failed partially to record", "error", err)

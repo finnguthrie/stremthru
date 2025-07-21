@@ -31,11 +31,12 @@ var pmClient = premiumize.NewAPIClient(&premiumize.APIClientConfig{
 })
 
 type WebDLFile struct {
-	Idx  int    `json:"index"`
-	Link string `json:"link,omitempty"`
-	Name string `json:"name"`
-	Path string `json:"path,omitempty"`
-	Size int64  `json:"size"`
+	Idx       int    `json:"index"`
+	Link      string `json:"link,omitempty"`
+	Name      string `json:"name"`
+	Path      string `json:"path,omitempty"`
+	Size      int64  `json:"size"`
+	VideoHash string `json:"video_hash,omitempty"`
 }
 
 type ListWebDLsParams struct {

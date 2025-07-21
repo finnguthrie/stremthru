@@ -35,7 +35,7 @@ func TrackMagnet(s store.Store, hash string, name string, size int64, files []st
 	tInfoSource := torrent_info.TorrentInfoSource(storeCode)
 	tsFiles := torrent_stream.Files{}
 	for _, f := range files {
-		tsFiles = append(tsFiles, torrent_stream.File{Idx: f.Idx, Name: f.Name, Size: f.Size, Source: string(tInfoSource)})
+		tsFiles = append(tsFiles, torrent_stream.File{Idx: f.Idx, Name: f.Name, Size: f.Size, Source: string(tInfoSource), VideoHash: f.VideoHash})
 	}
 	magnet_cache.Touch(s.GetName().Code(), hash, tsFiles, !cacheMiss, true)
 	go torrent_info.Upsert([]torrent_info.TorrentInfoInsertData{{

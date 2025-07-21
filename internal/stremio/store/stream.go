@@ -322,6 +322,7 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 					BingeGroup: matcher.IdPrefix + cInfo.Hash,
 					Filename:   file.Name,
 					VideoSize:  file.Size,
+					VideoHash:  file.VideoHash,
 				},
 			}
 			if pttr == nil {

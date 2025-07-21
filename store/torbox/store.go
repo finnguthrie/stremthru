@@ -412,11 +412,12 @@ func (c *StoreClient) GetMagnet(params *store.GetMagnetParams) (*store.GetMagnet
 	}
 	for _, f := range res.Data.Files {
 		file := store.MagnetFile{
-			Idx:  f.Id,
-			Link: LockedFileLink("").Create(res.Data.Id, f.Id),
-			Name: f.ShortName,
-			Path: "/" + f.Name,
-			Size: f.Size,
+			Idx:       f.Id,
+			Link:      LockedFileLink("").Create(res.Data.Id, f.Id),
+			Name:      f.ShortName,
+			Path:      "/" + f.Name,
+			Size:      f.Size,
+			VideoHash: f.OpensubtitlesHash,
 		}
 		data.Files = append(data.Files, file)
 	}

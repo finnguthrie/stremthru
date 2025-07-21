@@ -266,10 +266,11 @@ func getStoreContentInfo(s store.Store, storeToken string, id string, clientIp s
 		}
 		for _, f := range news.Files {
 			cInfo.Files = append(cInfo.Files, store.MagnetFile{
-				Idx:  f.Idx,
-				Name: f.Name,
-				Size: f.Size,
-				Link: f.Link,
+				Idx:       f.Idx,
+				Name:      f.Name,
+				Size:      f.Size,
+				Link:      f.Link,
+				VideoHash: f.VideoHash,
 			})
 
 		}
@@ -299,10 +300,11 @@ func getStoreContentInfo(s store.Store, storeToken string, id string, clientIp s
 		}
 		for _, f := range webdl.Files {
 			cInfo.Files = append(cInfo.Files, store.MagnetFile{
-				Idx:  f.Idx,
-				Name: f.Name,
-				Size: f.Size,
-				Link: f.Link,
+				Idx:       f.Idx,
+				Name:      f.Name,
+				Size:      f.Size,
+				Link:      f.Link,
+				VideoHash: f.VideoHash,
 			})
 
 		}
