@@ -23,10 +23,13 @@ func (f CheckTorrentsCachedDataItemFile) GetPath() string {
 }
 
 type CheckTorrentsCachedDataItem struct {
-	Name  string                            `json:"name"`
-	Size  int64                             `json:"size"`
-	Hash  string                            `json:"hash"`
-	Files []CheckTorrentsCachedDataItemFile `json:"files"`
+	Name     string                            `json:"name"`
+	Size     int64                             `json:"size"`
+	Hash     string                            `json:"hash"`
+	Trackers []any                             `json:"trackers"`
+	Seeds    int                               `json:"seeds"`
+	Peers    int                               `json:"peers"`
+	Files    []CheckTorrentsCachedDataItemFile `json:"files"`
 }
 
 type CheckTorrentsCachedData []CheckTorrentsCachedDataItem
@@ -92,13 +95,18 @@ func (c APIClient) CreateTorrent(params *CreateTorrentParams) (APIResponse[Creat
 }
 
 type TorrentFile struct {
-	Id        int    `json:"id"`
-	MD5       string `json:"md5"`
-	S3Path    string `json:"s3_path"`
-	Name      string `json:"name"`
-	Size      int64  `json:"size"`
-	MimeType  string `json:"mimetype"`
-	ShortName string `json:"short_name"`
+	Id                int    `json:"id"`
+	MD5               string `json:"md5"`
+	Hash              string `json:"hash"`
+	Name              string `json:"name"`
+	Size              int64  `json:"size"`
+	Zipped            bool   `json:"zipped"`
+	S3Path            string `json:"s3_path"`
+	Infected          bool   `json:"infected"`
+	MimeType          string `json:"mimetype"`
+	ShortName         string `json:"short_name"`
+	AbsolutePath      string `json:"absolute_path"`
+	OpensubtitlesHash string `json:"opensubtitles_hash"`
 }
 
 type TorrentDownloadState string
@@ -106,6 +114,7 @@ type TorrentDownloadState string
 const (
 	TorrentDownloadStateDownloading        TorrentDownloadState = "downloading"        // The torrent is currently downloading
 	TorrentDownloadStateUploading          TorrentDownloadState = "uploading"          // The torrent is currently seeding
+	TorrentDownloadStateStalled            TorrentDownloadState = "stalled"            // The torrent is trying to download, but there are no seeds connected to download from
 	TorrentDownloadStatePaused             TorrentDownloadState = "paused"             // The torrent is paused
 	TorrentDownloadStateCompleted          TorrentDownloadState = "completed"          // The torrent is completely downloaded. Do not use this for download completion status
 	TorrentDownloadStateCached             TorrentDownloadState = "cached"             // The torrent is cached from the server
