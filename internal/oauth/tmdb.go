@@ -89,7 +89,7 @@ var tmdbOAuthConfig = oauth2.Config{
 	RedirectURL: config.BaseURL.JoinPath("/auth/themoviedb.org/callback").String(),
 }
 
-var tmdbRequestTokenCache = cache.NewLRUCache[string](&cache.CacheConfig{
+var tmdbRequestTokenCache = cache.NewCache[string](&cache.CacheConfig{
 	Lifetime: 10 * time.Minute,
 	Name:     "oauth:tmdb:request_token",
 })
