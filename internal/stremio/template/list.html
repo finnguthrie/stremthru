@@ -215,7 +215,6 @@
           </div>
           <div class="absolute" style="bottom: -0.75rem; right: 1rem;">
             <small>
-              {{if ne $list.Id ""}}
               <button
                 {{if not $.CanRemoveList}}disabled{{end}}
                 id="configure-action-remove-list"
@@ -242,7 +241,6 @@
               >
                 + Add
               </button>
-              {{end}}
             </small>
           </div>
         </div>

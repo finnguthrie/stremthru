@@ -61,9 +61,9 @@ func handleConfigure(w http.ResponseWriter, r *http.Request) {
 				idx := slices.IndexFunc(td.Lists, func(tdl TemplateDataList) bool {
 					return tdl.Id == id
 				})
-				if idx < 0 || idx >= len(td.Lists) {
+				if idx >= len(td.Lists) {
 					td.Lists = append(td.Lists, newTemplateDataList(len(td.Lists)))
-				} else {
+				} else if idx != -1 {
 					td.Lists = slices.Insert(td.Lists, idx+1, newTemplateDataList(idx+1))
 				}
 			}
@@ -72,7 +72,7 @@ func handleConfigure(w http.ResponseWriter, r *http.Request) {
 			idx := slices.IndexFunc(td.Lists, func(tdl TemplateDataList) bool {
 				return tdl.Id == id
 			})
-			if idx < len(td.Lists) {
+			if idx != -1 && idx < len(td.Lists) {
 				td.Lists = slices.Delete(td.Lists, idx, idx+1)
 			}
 		case "move-list-up":
