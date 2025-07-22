@@ -430,7 +430,7 @@ var query_get_id_by_anchor_id_cond = map[string]string{
 var query_get_id_by_anchor_id_after_cond = " LIMIT 1"
 
 var query_insert_id_map = fmt.Sprintf(
-	`INSERT INTO %s AS aim (%s) VALUES (%s)`,
+	`INSERT INTO %s AS aim (%s) VALUES %s`,
 	IdMapTableName,
 	strings.Join(IdMapColumns[1:len(IdMapColumns)-1], ","),
 	query_bulk_record_id_maps_placeholder,
