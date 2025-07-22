@@ -48,6 +48,35 @@ type AnimeIdMap struct {
 	UpdatedAt   db.Timestamp   `json:"uat"`
 }
 
+func (aim *AnimeIdMap) shouldPersist() bool {
+	idCount := 0
+	if normalizeOptionalId(aim.AniDB) != "" {
+		idCount++
+	}
+	if normalizeOptionalId(aim.AniList) != "" {
+		idCount++
+	}
+	if normalizeOptionalId(aim.AniSearch) != "" {
+		idCount++
+	}
+	if normalizeOptionalId(aim.AnimePlanet) != "" {
+		idCount++
+	}
+	if normalizeOptionalId(aim.Kitsu) != "" {
+		idCount++
+	}
+	if normalizeOptionalId(aim.LiveChart) != "" {
+		idCount++
+	}
+	if normalizeOptionalId(aim.MAL) != "" {
+		idCount++
+	}
+	if normalizeOptionalId(aim.NotifyMoe) != "" {
+		idCount++
+	}
+	return idCount > 1
+}
+
 func (idMap *AnimeIdMap) IsZero() bool {
 	return idMap.Id == 0
 }
@@ -379,6 +408,18 @@ func tryBulkRecordIdMaps(items []AnimeIdMap, anchorColumnName string) error {
 		}
 		seenMap[anchorValue] = struct{}{}
 
+		if anchorValue == "" {
+			log.Debug("skipping idMap with empty anchor value", "item", item, "anchor_column", anchorColumnName)
+			count--
+			continue
+		}
+
+		if !item.shouldPersist() {
+			log.Debug("skipping idMap with no ids to persist", "item", item)
+			count--
+			continue
+		}
+
 		args = append(
 			args,
 			item.Type,
@@ -394,6 +435,10 @@ func tryBulkRecordIdMaps(items []AnimeIdMap, anchorColumnName string) error {
 			db.NullString{String: normalizeOptionalId(item.TMDB)},
 			db.NullString{String: normalizeOptionalId(item.TVDB)},
 		)
+	}
+
+	if count == 0 {
+		return nil
 	}
 
 	query.WriteString(util.RepeatJoin(query_bulk_record_id_maps_placeholder, count, ","))
@@ -502,7 +547,6 @@ func BulkRecordIdMaps(items []AnimeIdMap, anchorColumnName string) error {
 	}
 	if err == nil {
 		return nil
-
 	}
 
 	log.Error("bulk record idMaps failed", "error", err, "anchor_column", anchorColumnName)
