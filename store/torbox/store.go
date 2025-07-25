@@ -282,7 +282,6 @@ func (c *StoreClient) AddMagnet(params *store.AddMagnetParams) (*store.AddMagnet
 		Id:     strconv.Itoa(res.Data.TorrentId),
 		Hash:   res.Data.Hash,
 		Magnet: magnet.Link,
-		Name:   res.Data.Name,
 		Status: store.MagnetStatusQueued,
 		Files:  []store.MagnetFile{},
 	}
@@ -294,6 +293,7 @@ func (c *StoreClient) AddMagnet(params *store.AddMagnetParams) (*store.AddMagnet
 	if err != nil {
 		return nil, err
 	}
+	data.Name = t.Data.Name
 	data.Size = t.Data.Size
 	data.AddedAt = t.Data.GetAddedAt()
 	if t.Data.DownloadFinished && t.Data.DownloadPresent {
@@ -303,11 +303,12 @@ func (c *StoreClient) AddMagnet(params *store.AddMagnetParams) (*store.AddMagnet
 	}
 	for _, f := range t.Data.Files {
 		file := store.MagnetFile{
-			Idx:  f.Id,
-			Link: LockedFileLink("").Create(res.Data.TorrentId, f.Id),
-			Name: f.ShortName,
-			Path: "/" + f.Name,
-			Size: f.Size,
+			Idx:       f.Id,
+			Link:      LockedFileLink("").Create(res.Data.TorrentId, f.Id),
+			Name:      f.ShortName,
+			Path:      "/" + f.Name,
+			Size:      f.Size,
+			VideoHash: f.OpensubtitlesHash,
 		}
 		data.Files = append(data.Files, file)
 	}

@@ -52,7 +52,6 @@ func (c APIClient) CheckTorrentsCached(params *CheckTorrentsCachedParams) (APIRe
 
 type CreateTorrentData struct {
 	TorrentId int    `json:"torrent_id"`
-	Name      string `json:"name"`
 	Hash      string `json:"hash"`
 	AuthId    string `json:"auth_id"`
 }
