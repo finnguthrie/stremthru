@@ -8,6 +8,7 @@ import (
 	"github.com/MunifTanjim/stremthru/internal/mdblist"
 	"github.com/MunifTanjim/stremthru/internal/shared"
 	stremio_shared "github.com/MunifTanjim/stremthru/internal/stremio/shared"
+	"github.com/MunifTanjim/stremthru/internal/util"
 )
 
 func handleConfigure(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +35,7 @@ func handleConfigure(w http.ResponseWriter, r *http.Request) {
 
 	td := getTemplateData(ud, udErr, isAuthed, r)
 
-	if action := r.Header.Get("x-addon-configure-action"); action != "" {
+	if action := stremio_shared.GetConfigureAction(r); action != "" {
 		switch action {
 		case "authorize":
 			if !IsPublicInstance {
@@ -57,10 +58,7 @@ func handleConfigure(w http.ResponseWriter, r *http.Request) {
 			td.IsAuthed = false
 		case "add-list":
 			if td.IsAuthed || len(td.Lists) < MaxPublicInstanceListCount {
-				id := r.Header.Get("x-addon-configure-action-data")
-				idx := slices.IndexFunc(td.Lists, func(tdl TemplateDataList) bool {
-					return tdl.Id == id
-				})
+				idx := util.SafeParseInt(r.Header.Get("x-addon-configure-action-data"), -1)
 				if idx >= len(td.Lists) {
 					td.Lists = append(td.Lists, newTemplateDataList(len(td.Lists)))
 				} else if idx != -1 {
@@ -68,10 +66,7 @@ func handleConfigure(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		case "remove-list":
-			id := r.Header.Get("x-addon-configure-action-data")
-			idx := slices.IndexFunc(td.Lists, func(tdl TemplateDataList) bool {
-				return tdl.Id == id
-			})
+			idx := util.SafeParseInt(r.Header.Get("x-addon-configure-action-data"), -1)
 			if idx != -1 && idx < len(td.Lists) {
 				td.Lists = slices.Delete(td.Lists, idx, idx+1)
 			}

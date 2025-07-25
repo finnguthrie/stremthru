@@ -10,6 +10,7 @@ import (
 	"github.com/MunifTanjim/stremthru/internal/anilist"
 	"github.com/MunifTanjim/stremthru/internal/mdblist"
 	"github.com/MunifTanjim/stremthru/internal/oauth"
+	stremio_shared "github.com/MunifTanjim/stremthru/internal/stremio/shared"
 	stremio_userdata "github.com/MunifTanjim/stremthru/internal/stremio/userdata"
 	"github.com/MunifTanjim/stremthru/internal/tmdb"
 	"github.com/MunifTanjim/stremthru/internal/trakt"
@@ -133,6 +134,8 @@ func getUserData(r *http.Request, isAuthed bool) (*UserData, error) {
 			return nil, err
 		}
 
+		isExecutingAction := stremio_shared.GetConfigureAction(r) != ""
+
 		udErr := userDataError{}
 
 		ud.MDBListAPIkey = r.Form.Get("mdblist_api_key")
@@ -200,7 +203,7 @@ func getUserData(r *http.Request, isAuthed bool) (*UserData, error) {
 		for i := range lists_length {
 			listId := r.Form.Get("lists[" + strconv.Itoa(i) + "].id")
 			listUrlStr := r.Form.Get("lists[" + strconv.Itoa(i) + "].url")
-			if listId == "" && listUrlStr == "" {
+			if !isExecutingAction && listId == "" && listUrlStr == "" {
 				continue
 			}
 

@@ -26,3 +26,7 @@ func GetPathValue(r *http.Request, name string) string {
 	}
 	return r.PathValue(name)
 }
+
+func GetConfigureAction(r *http.Request) string {
+	return r.Header.Get("x-addon-configure-action")
+}

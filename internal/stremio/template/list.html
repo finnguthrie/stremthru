@@ -222,7 +222,7 @@
                 hx-target="body"
                 hx-post="configure"
                 hx-include="#configuration"
-                hx-headers='{"x-addon-configure-action":"remove-list","x-addon-configure-action-data":"{{$list.Id}}"}'
+                hx-headers='{"x-addon-configure-action":"remove-list","x-addon-configure-action-data":"{{$idx}}"}'
                 class="secondary mb-0"
                 style="font-size: 0.75rem; padding: 0 0.25em;"
               >
@@ -235,7 +235,7 @@
                 hx-target="body"
                 hx-post="configure"
                 hx-include="#configuration"
-                hx-headers='{"x-addon-configure-action":"add-list","x-addon-configure-action-data":"{{$list.Id}}"}'
+                hx-headers='{"x-addon-configure-action":"add-list","x-addon-configure-action-data":"{{$idx}}"}'
                 class="secondary mb-0"
                 style="font-size: 0.75rem; padding: 0 0.25em;"
               >
