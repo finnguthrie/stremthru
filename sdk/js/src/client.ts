@@ -50,6 +50,7 @@ class StremThruStore {
         name: string;
         path: string;
         size: number;
+        video_hash: string;
       }>;
       hash: string;
       id: string;
@@ -106,6 +107,7 @@ class StremThruStore {
         name: string;
         path: string;
         size: number;
+        video_hash: string;
       }>;
       hash: string;
       id: string;
