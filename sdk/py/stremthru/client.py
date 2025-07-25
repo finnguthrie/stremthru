@@ -158,6 +158,7 @@ class AddMagnetDataFile(TypedDict):
     name: str
     path: str
     size: int
+    video_hash: str
 
 
 class AddMagnetData(TypedDict):
@@ -197,6 +198,7 @@ class GetMagnetDataFile(TypedDict):
     name: str
     path: str
     size: int
+    video_hash: str
 
 
 class GetMagnetData(TypedDict):
