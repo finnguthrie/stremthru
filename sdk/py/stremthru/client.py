@@ -70,7 +70,7 @@ class StremThru:
             if isinstance(auth, str):
                 if ":" in auth:
                     auth = base64.b64encode(auth.strip().encode()).decode()
-                self._headers["Proxy-Authorization"] = f"Basic {auth}"
+                self._headers["X-StremThru-Authorization"] = f"Basic {auth}"
             elif "store" in auth:
                 auth = cast(StremThruConfigAuthStoreToken, auth)
                 self._headers["X-StremThru-Store-Name"] = auth.get("store", "")
