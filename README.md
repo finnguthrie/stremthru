@@ -404,7 +404,8 @@ Add magnet link for download.
         "link": "string",
         "name": "string",
         "path": "string",
-        "size": "int"
+        "size": "int",
+        "video_hash": "string"
       }
     ],
     "added_at": "datetime"
@@ -471,7 +472,8 @@ Get magnet on user's account.
         "link": "string",
         "name": "string",
         "path": "string",
-        "size": "int"
+        "size": "int",
+        "video_hash": "string"
       }
     ],
     "added_at": "datetime"
