@@ -184,7 +184,7 @@ export class StremThru {
         if (config.auth.includes(":")) {
           config.auth = Buffer.from(config.auth.trim()).toString("base64");
         }
-        this.#headers["Proxy-Authorization"] = `Basic ${config.auth}`;
+        this.#headers["X-StremThru-Authorization"] = `Basic ${config.auth}`;
       } else if ("store" in config.auth) {
         this.#headers["X-StremThru-Store-Name"] = config.auth.store;
         this.#headers["X-StremThru-Store-Authorization"] =
