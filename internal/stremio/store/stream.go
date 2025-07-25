@@ -16,7 +16,6 @@ import (
 	"github.com/MunifTanjim/stremthru/internal/util"
 	"github.com/MunifTanjim/stremthru/store"
 	"github.com/MunifTanjim/stremthru/stremio"
-	fuzzy "github.com/paul-mannino/go-fuzzywuzzy"
 )
 
 var streamTemplate = func() *stremio_transformer.StreamTemplate {
@@ -171,7 +170,7 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 					filteredItems := []CachedCatalogItem{}
 					for i := range items {
 						item := &items[i]
-						if fuzzy.TokenSetRatio(query, strings.ToLower(item.Name), false, true) > 90 {
+						if util.FuzzyTokenSetRatio(query, strings.ToLower(item.Name)) > 90 {
 							filteredItems = append(filteredItems, *item)
 						}
 					}
