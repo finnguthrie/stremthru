@@ -331,6 +331,7 @@ type dynamicListMeta struct {
 	Endpoint  string
 	Name      string
 	MediaType MediaType
+	SortBy    string
 	Public    bool
 
 	NeedAccountObjectId bool
@@ -342,6 +343,9 @@ func (m dynamicListMeta) fetchPage(client *APIClient, page int, pageSize int) (i
 	params := Ctx{}
 	params.Query = &url.Values{
 		"page": []string{strconv.Itoa(page)},
+	}
+	if m.SortBy != "" {
+		params.Query.Set("sort_by", m.SortBy)
 	}
 
 	if m.IsV4 {
@@ -459,21 +463,25 @@ var dynamicListMetaById = map[string]dynamicListMeta{
 		Endpoint:  "/3/account/0/favorite/movies",
 		Name:      "Favorites",
 		MediaType: MediaTypeMovie,
+		SortBy:    "created_at.desc",
 	},
 	"favorites/tv": {
 		Endpoint:  "/3/account/0/favorite/tv",
 		Name:      "Favorites",
 		MediaType: MediaTypeTVShow,
+		SortBy:    "created_at.desc",
 	},
 	"ratings/movie": {
 		Endpoint:  "/3/account/0/rated/movies",
 		Name:      "Ratings",
 		MediaType: MediaTypeMovie,
+		SortBy:    "created_at.desc",
 	},
 	"ratings/tv": {
 		Endpoint:  "/3/account/0/rated/tv",
 		Name:      "Ratings",
 		MediaType: MediaTypeTVShow,
+		SortBy:    "created_at.desc",
 	},
 	"recommendations/movie": {
 		Endpoint:            "/4/account/{account_object_id}/movie/recommendations",
@@ -493,11 +501,13 @@ var dynamicListMetaById = map[string]dynamicListMeta{
 		Endpoint:  "/3/account/0/watchlist/movies",
 		Name:      "Watchlist",
 		MediaType: MediaTypeMovie,
+		SortBy:    "created_at.desc",
 	},
 	"watchlist/tv": {
 		Endpoint:  "/3/account/0/watchlist/tv",
 		Name:      "Watchlist",
 		MediaType: MediaTypeTVShow,
+		SortBy:    "created_at.desc",
 	},
 	"movie": {
 		Endpoint:  "/3/movie/popular",
