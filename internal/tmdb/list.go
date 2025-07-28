@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/MunifTanjim/stremthru/internal/util"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type PaginatedResult[T any] struct {
@@ -331,6 +332,9 @@ type dynamicListMeta struct {
 	Name      string
 	MediaType MediaType
 	Public    bool
+
+	NeedAccountObjectId bool
+	IsV4                bool
 }
 
 func (m dynamicListMeta) fetchPage(client *APIClient, page int, pageSize int) (items []ListItem, totalPages, totalResults int, err error) {
@@ -339,6 +343,29 @@ func (m dynamicListMeta) fetchPage(client *APIClient, page int, pageSize int) (i
 	params.Query = &url.Values{
 		"page": []string{strconv.Itoa(page)},
 	}
+
+	if m.IsV4 {
+		response := fetchListData[ListItem]{}
+		endpoint := m.Endpoint
+		if m.NeedAccountObjectId {
+			if token, err := client.OAuth.TokenSource.Token(); err != nil {
+				return nil, totalPages, totalResults, err
+			} else if t, _, err := jwt.NewParser().ParseUnverified(token.AccessToken, jwt.MapClaims{}); err != nil {
+				return nil, totalPages, totalResults, err
+			} else if sub, err := t.Claims.GetSubject(); err != nil {
+				return nil, totalPages, totalResults, err
+			} else {
+				endpoint = strings.ReplaceAll(endpoint, "{account_object_id}", sub)
+			}
+		}
+		_, err := client.Request("GET", endpoint, params, &response)
+		if err != nil {
+			return nil, totalPages, totalResults, err
+		}
+		totalPages, totalResults = response.TotalPages, response.TotalResults
+		return response.Results, totalPages, totalResults, nil
+	}
+
 	items = make([]ListItem, 0, pageSize)
 	switch m.MediaType {
 	case MediaTypeMovie:
@@ -449,14 +476,18 @@ var dynamicListMetaById = map[string]dynamicListMeta{
 		MediaType: MediaTypeTVShow,
 	},
 	"recommendations/movie": {
-		Endpoint:  "/3/account/0/recommendations/movies",
-		Name:      "Recommendations",
-		MediaType: MediaTypeMovie,
+		Endpoint:            "/4/account/{account_object_id}/movie/recommendations",
+		Name:                "Recommendations",
+		MediaType:           MediaTypeMovie,
+		NeedAccountObjectId: true,
+		IsV4:                true,
 	},
 	"recommendations/tv": {
-		Endpoint:  "/3/account/0/recommendations/tv",
-		Name:      "Recommendations",
-		MediaType: MediaTypeTVShow,
+		Endpoint:            "/4/account/{account_object_id}/tv/recommendations",
+		Name:                "Recommendations",
+		MediaType:           MediaTypeTVShow,
+		NeedAccountObjectId: true,
+		IsV4:                true,
 	},
 	"watchlist/movie": {
 		Endpoint:  "/3/account/0/watchlist/movies",

@@ -25,8 +25,8 @@ type APIClientConfig struct {
 }
 
 type APIClientOAuth struct {
-	Config oauth2.Config
-	client *APIClient
+	Config      oauth2.Config
+	TokenSource oauth2.TokenSource
 }
 
 type APIClient struct {
@@ -51,15 +51,14 @@ func NewAPIClient(conf *APIClientConfig) *APIClient {
 		Endpoint:    conf.OAuth.Config.Endpoint,
 		RedirectURL: conf.OAuth.Config.RedirectURL,
 	}
-	c.OAuth.client = c
+	c.OAuth.TokenSource = conf.OAuth.GetTokenSource(c.OAuth.Config)
 
-	tokenSource := conf.OAuth.GetTokenSource(c.OAuth.Config)
-	if tokenSource == nil {
+	if c.OAuth.TokenSource == nil {
 		c.httpClient = conf.HTTPClient
 	} else {
 		c.httpClient = oauth2.NewClient(
 			context.WithValue(context.Background(), oauth2.HTTPClient, conf.HTTPClient),
-			tokenSource,
+			c.OAuth.TokenSource,
 		)
 	}
 
