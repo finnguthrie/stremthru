@@ -502,11 +502,31 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 			item := &catalogItems[i]
 			media := medias[i]
 
-			if media.IdMap == nil || media.IdMap.Kitsu == "" {
+			if media.IdMap == nil {
 				continue
 			}
 
-			item.Id = "kitsu:" + media.IdMap.Kitsu
+			switch ud.MetaIdAnime {
+			case "mal":
+				if media.IdMap.MAL != "" {
+					item.Id = "mal:" + media.IdMap.MAL
+				}
+			case "anilist":
+				if media.IdMap.AniList != "" {
+					item.Id = "anilist:" + media.IdMap.AniList
+				}
+			case "anidb":
+				if media.IdMap.AniDB != "" {
+					item.Id = "anidb:" + media.IdMap.AniDB
+				}
+			}
+			if item.Id == "" && media.IdMap.Kitsu != "" {
+				item.Id = "kitsu:" + media.IdMap.Kitsu
+			}
+			if item.Id == "" {
+				continue
+			}
+
 			if rpdbPosterBaseUrl != "" && media.IdMap.IMDB != "" {
 				item.Poster = rpdbPosterBaseUrl + media.IdMap.IMDB + ".jpg?fallback=true"
 			}

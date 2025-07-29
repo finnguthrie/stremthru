@@ -36,6 +36,7 @@ type UserData struct {
 
 	MetaIdMovie  string `json:"meta_id_movie,omitempty"`
 	MetaIdSeries string `json:"meta_id_series,omitempty"`
+	MetaIdAnime  string `json:"meta_id_anime,omitempty"`
 
 	Shuffle bool `json:"shuffle,omitempty"`
 
@@ -76,6 +77,7 @@ type userDataError struct {
 	trakt_token_id string
 	meta_id_movie  string
 	meta_id_series string
+	meta_id_anime  string
 }
 
 func (uderr userDataError) HasError() bool {
@@ -146,6 +148,7 @@ func getUserData(r *http.Request, isAuthed bool) (*UserData, error) {
 
 		ud.MetaIdMovie = r.Form.Get("meta_id_movie")
 		ud.MetaIdSeries = r.Form.Get("meta_id_series")
+		ud.MetaIdAnime = r.Form.Get("meta_id_anime")
 
 		ud.Shuffle = r.Form.Get("shuffle") == "on"
 

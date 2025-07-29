@@ -42,6 +42,15 @@ func GetMetaIdMovieOptions(ud *UserData) []configure.ConfigOption {
 func GetMetaIdSeriesOptions(ud *UserData) []configure.ConfigOption {
 	return GetMetaIdMovieOptions(ud)
 }
+func GetMetaIdAnimeOptions(ud *UserData) []configure.ConfigOption {
+	options := []configure.ConfigOption{
+		{Value: "", Label: "Kitsu"},
+		{Value: "mal", Label: "MAL"},
+		{Value: "anilist", Label: "AniList"},
+		{Value: "anidb", Label: "AniDB"},
+	}
+	return options
+}
 
 type Base = stremio_template.BaseData
 
@@ -101,6 +110,7 @@ type TemplateData struct {
 
 	MetaIdMovie  configure.Config
 	MetaIdSeries configure.Config
+	MetaIdAnime  configure.Config
 
 	Shuffle configure.Config
 
@@ -206,6 +216,14 @@ func getTemplateData(ud *UserData, udError userDataError, isAuthed bool, r *http
 			Default: ud.MetaIdSeries,
 			Error:   udError.meta_id_series,
 			Options: GetMetaIdSeriesOptions(ud),
+		},
+		MetaIdAnime: configure.Config{
+			Key:     "meta_id_anime",
+			Title:   "Preferred Meta Provider (Anime)",
+			Type:    configure.ConfigTypeSelect,
+			Default: ud.MetaIdAnime,
+			Error:   udError.meta_id_anime,
+			Options: GetMetaIdAnimeOptions(ud),
 		},
 		Shuffle: configure.Config{
 			Key:   "shuffle",
