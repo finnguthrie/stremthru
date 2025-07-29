@@ -305,7 +305,7 @@ func GetTypeByKitsuIds(ids []int) (map[int]AnimeIdMapType, error) {
 }
 
 var query_get_anidb_id_by_kitsu_id = fmt.Sprintf(
-	`SELECT im.%s, at.%s FROM %s im LEFT JOIN %s at ON at.%s = im.%s WHERE im.%s = ? LIMIT 1`,
+	`SELECT coalesce(im.%s, ''), coalesce(at.%s, '') FROM %s im LEFT JOIN %s at ON at.%s = im.%s WHERE im.%s = ? LIMIT 1`,
 	IdMapColumn.AniDB,
 	anidb.TitleColumn.Season,
 	IdMapTableName,
@@ -318,6 +318,29 @@ var query_get_anidb_id_by_kitsu_id = fmt.Sprintf(
 func GetAniDBIdByKitsuId(kitsuId string) (anidbId, season string, err error) {
 	query := query_get_anidb_id_by_kitsu_id
 	row := db.QueryRow(query, kitsuId)
+	if err = row.Scan(&anidbId, &season); err != nil {
+		if err == sql.ErrNoRows {
+			return "", "", nil
+		}
+		return "", "", err
+	}
+	return anidbId, season, nil
+}
+
+var query_get_anidb_id_by_mal_id = fmt.Sprintf(
+	`SELECT coalesce(im.%s, ''), coalesce(at.%s, '') FROM %s im LEFT JOIN %s at ON at.%s = im.%s WHERE im.%s = ? LIMIT 1`,
+	IdMapColumn.AniDB,
+	anidb.TitleColumn.Season,
+	IdMapTableName,
+	anidb.TitleTableName,
+	anidb.TitleColumn.TId,
+	IdMapColumn.AniDB,
+	IdMapColumn.MAL,
+)
+
+func GetAniDBIdByMALId(malId string) (anidbId, season string, err error) {
+	query := query_get_anidb_id_by_mal_id
+	row := db.QueryRow(query, malId)
 	if err = row.Scan(&anidbId, &season); err != nil {
 		if err == sql.ErrNoRows {
 			return "", "", nil

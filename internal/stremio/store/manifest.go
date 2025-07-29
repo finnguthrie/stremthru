@@ -11,6 +11,8 @@ import (
 	"github.com/MunifTanjim/stremthru/stremio"
 )
 
+var AnimeEnabled = config.Feature.IsEnabled("anime")
+
 const ContentTypeOther = "other"
 
 const (
@@ -128,6 +130,10 @@ func GetManifest(r *http.Request, ud *UserData) *stremio.Manifest {
 	if !ud.HideStream {
 		streamResource.IDPrefixes = append([]string{"tt"}, idPrefixes...)
 		streamResource.Types = append(streamResource.Types, stremio.ContentTypeMovie, stremio.ContentTypeSeries)
+		if AnimeEnabled {
+			streamResource.IDPrefixes = append(streamResource.IDPrefixes, "kitsu:", "mal:")
+			streamResource.Types = append(streamResource.Types, "anime")
+		}
 	}
 
 	manifest := &stremio.Manifest{

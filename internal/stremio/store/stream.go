@@ -9,6 +9,8 @@ import (
 
 	"github.com/MunifTanjim/go-ptt"
 	"github.com/MunifTanjim/stremthru/core"
+	"github.com/MunifTanjim/stremthru/internal/anidb"
+	"github.com/MunifTanjim/stremthru/internal/anime"
 	"github.com/MunifTanjim/stremthru/internal/config"
 	"github.com/MunifTanjim/stremthru/internal/shared"
 	stremio_transformer "github.com/MunifTanjim/stremthru/internal/stremio/transformer"
@@ -56,6 +58,10 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 	contentType := r.PathValue("contentType")
 	isStremThruStoreId := isStoreId(videoIdWithLink)
 	isImdbId := strings.HasPrefix(videoIdWithLink, "tt")
+	isKitsuId := strings.HasPrefix(videoIdWithLink, "kitsu:")
+	isMALId := strings.HasPrefix(videoIdWithLink, "mal:")
+	isAnime := isKitsuId || isMALId
+
 	if isStremThruStoreId {
 		if contentType != ContentTypeOther {
 			shared.ErrorBadRequest(r, "unsupported type: "+contentType).Send(w, r)
@@ -63,6 +69,11 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 		}
 	} else if isImdbId {
 		if contentType != string(stremio.ContentTypeMovie) && contentType != string(stremio.ContentTypeSeries) {
+			shared.ErrorBadRequest(r, "unsupported type: "+contentType).Send(w, r)
+			return
+		}
+	} else if isAnime {
+		if contentType != string(stremio.ContentTypeMovie) && contentType != string(stremio.ContentTypeSeries) && contentType != "anime" {
 			shared.ErrorBadRequest(r, "unsupported type: "+contentType).Send(w, r)
 			return
 		}
@@ -219,6 +230,107 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if isAnime {
+		var anidbId, episode, season string
+		var err error
+
+		if isKitsuId {
+			kitsuId, kitsuEpisode, _ := strings.Cut(strings.TrimPrefix(videoIdWithLink, "kitsu:"), ":")
+			anidbId, season, err = anime.GetAniDBIdByKitsuId(kitsuId)
+			episode = kitsuEpisode
+		} else if isMALId {
+			malId, malEpisode, _ := strings.Cut(strings.TrimPrefix(videoIdWithLink, "mal:"), ":")
+			anidbId, season, err = anime.GetAniDBIdByMALId(malId)
+			episode = malEpisode
+		}
+		if err != nil {
+			SendError(w, r, err)
+			return
+		}
+		if anidbId == "" {
+			SendResponse(w, r, 200, res)
+			return
+		}
+
+		titles, err := anidb.GetTitlesByIds([]string{anidbId})
+		if len(titles) == 0 {
+			SendResponse(w, r, 200, res)
+			return
+		}
+
+		var wg sync.WaitGroup
+
+		idPrefixes := ud.getIdPrefixes()
+		errs := make([]error, len(idPrefixes))
+		matcherResults := make([][]StreamFileMatcher, len(idPrefixes))
+
+		for idx, idPrefix := range idPrefixes {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+
+				idr, err := parseId(idPrefix)
+				if err != nil {
+					errs[idx] = err
+					return
+				}
+				ctx, err := ud.GetRequestContext(r, idr)
+				if err != nil || ctx.Store == nil {
+					if err != nil {
+						LogError(r, "failed to get request context", err)
+					}
+					errs[idx] = shared.ErrorBadRequest(r, "")
+					return
+				}
+
+				items := getCatalogItems(ctx.Store, ctx.StoreAuthToken, ctx.ClientIP, idPrefix, idr)
+
+				addedItemIdx := map[int]struct{}{}
+				filteredItems := []CachedCatalogItem{}
+				for i := range titles {
+					title := &titles[i]
+					for i := range items {
+						if _, added := addedItemIdx[i]; added {
+							continue
+						}
+						item := &items[i]
+						if util.FuzzyTokenSetRatio(title.Value, item.Name) > 90 {
+							filteredItems = append(filteredItems, *item)
+							addedItemIdx[i] = struct{}{}
+						}
+					}
+				}
+				items = filteredItems
+
+				for i := range items {
+					item := &items[i]
+					id := strings.TrimPrefix(item.Id, idPrefix)
+					matcherResults[idx] = append(matcherResults[idx], StreamFileMatcher{
+						MagnetId: id,
+						Season:   util.SafeParseInt(season, -1),
+						Episode:  util.SafeParseInt(episode, -1),
+
+						IdPrefix:   idPrefix,
+						IdR:        idr,
+						Store:      ctx.Store,
+						StoreToken: ctx.StoreAuthToken,
+						ClientIP:   ctx.ClientIP,
+					})
+				}
+			}()
+		}
+		wg.Wait()
+		for _, err := range errs {
+			if err != nil {
+				SendError(w, r, err)
+				return
+			}
+		}
+		for i := range matcherResults {
+			matchers = append(matchers, matcherResults[i]...)
+		}
+	}
+
 	var wg sync.WaitGroup
 	streamBaseUrl := ExtractRequestBaseURL(r).JoinPath("/stremio/store/" + eud + "/_/strem/")
 	errs := make([]error, len(matchers))
@@ -234,7 +346,7 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			if !matcher.IdR.isUsenet && !matcher.IdR.isWebDL && meta == nil {
+			if !isAnime && !matcher.IdR.isUsenet && !matcher.IdR.isWebDL && meta == nil {
 				stremIdByHash, err := torrent_stream.GetStremIdByHashes([]string{cInfo.Hash})
 				if err != nil {
 					log.Error("failed to get strem id by hashes", "error", err)
@@ -280,26 +392,54 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 					file = f
 					break
 				} else if matcher.Episode > 0 {
-					if r, err := util.ParseTorrentTitle(f.Name); err == nil {
-						pttr = r
-						fSeason, fEpisode := tSeason, tEpisode
-						if len(r.Seasons) > 0 {
-							fSeason = r.Seasons[0]
-						} else if tSeason != -1 {
-							r.Seasons = append(r.Seasons, tSeason)
-						}
-						if len(r.Episodes) > 0 {
-							fEpisode = r.Episodes[0]
-						} else if tEpisode != -1 {
-							r.Episodes = append(r.Episodes, tEpisode)
-						}
-						if fSeason == matcher.Season && fEpisode == matcher.Episode {
-							file = f
-							season, episode = fSeason, fEpisode
-							break
+					if isAnime {
+						if r, err := util.ParseTorrentTitle(f.Name); err == nil {
+							pttr = r
+							fSeason, fEpisode := tSeason, tEpisode
+							if len(r.Seasons) > 0 {
+								fSeason = r.Seasons[0]
+							} else if tSeason != -1 {
+								r.Seasons = append(r.Seasons, tSeason)
+							}
+							if len(r.Episodes) > 0 {
+								fEpisode = r.Episodes[0]
+							} else if tEpisode != -1 {
+								r.Episodes = append(r.Episodes, tEpisode)
+							}
+							if tSeason == -1 && fEpisode == matcher.Episode {
+								file = f
+								season, episode = fSeason, fEpisode
+								break
+							} else if fSeason == matcher.Season && fEpisode == matcher.Episode {
+								file = f
+								season, episode = fSeason, fEpisode
+								break
+							}
+						} else {
+							pttLog.Warn("failed to parse", "error", err, "title", f.Name)
 						}
 					} else {
-						pttLog.Warn("failed to parse", "error", err, "title", f.Name)
+						if r, err := util.ParseTorrentTitle(f.Name); err == nil {
+							pttr = r
+							fSeason, fEpisode := tSeason, tEpisode
+							if len(r.Seasons) > 0 {
+								fSeason = r.Seasons[0]
+							} else if tSeason != -1 {
+								r.Seasons = append(r.Seasons, tSeason)
+							}
+							if len(r.Episodes) > 0 {
+								fEpisode = r.Episodes[0]
+							} else if tEpisode != -1 {
+								r.Episodes = append(r.Episodes, tEpisode)
+							}
+							if fSeason == matcher.Season && fEpisode == matcher.Episode {
+								file = f
+								season, episode = fSeason, fEpisode
+								break
+							}
+						} else {
+							pttLog.Warn("failed to parse", "error", err, "title", f.Name)
+						}
 					}
 					pttr = nil
 				} else if matcher.UseLargestFile {
