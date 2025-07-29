@@ -547,6 +547,9 @@ func (ud *UserData) FetchAniListList(list *anilist.AniListList, scheduleIdMapSyn
 }
 
 func (ud *UserData) FetchTMDBList(list *tmdb.TMDBList) error {
+	if ud.TMDBTokenId == "" {
+		return errors.New("TMDB Auth Code missing")
+	}
 	if ud.tmdbById == nil {
 		ud.tmdbById = map[string]tmdb.TMDBList{}
 	}
@@ -572,6 +575,9 @@ func (ud *UserData) FetchTMDBList(list *tmdb.TMDBList) error {
 }
 
 func (ud *UserData) FetchTraktList(list *trakt.TraktList) error {
+	if ud.TraktTokenId == "" {
+		return errors.New("Trakt Auth Code missing")
+	}
 	if ud.traktById == nil {
 		ud.traktById = map[string]trakt.TraktList{}
 	}
