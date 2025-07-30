@@ -102,10 +102,8 @@ type TemplateData struct {
 
 	RPDBAPIKey configure.Config
 
-	TMDBEnabled bool
 	TMDBTokenId configure.Config
 
-	TraktEnabled bool
 	TraktTokenId configure.Config
 
 	MetaIdMovie  configure.Config
@@ -173,7 +171,6 @@ func getTemplateData(ud *UserData, udError userDataError, isAuthed bool, r *http
 			Description:  `Rating Poster Database <a href="https://ratingposterdb.com/api-key/" target="blank">API Key</a>`,
 			Autocomplete: "off",
 		},
-		TMDBEnabled: TMDBEnabled,
 		TMDBTokenId: configure.Config{
 			Key:          "tmdb_token_id",
 			Title:        "Auth Code",
@@ -186,8 +183,8 @@ func getTemplateData(ud *UserData, udError userDataError, isAuthed bool, r *http
 				Label:   "Authorize",
 				OnClick: template.JS(`window.open("` + oauth.TMDBOAuthConfig.AuthCodeURL(uuid.NewString()) + `", "_blank")`),
 			},
+			Hidden: !TMDBEnabled,
 		},
-		TraktEnabled: TraktEnabled,
 		TraktTokenId: configure.Config{
 			Key:          "trakt_token_id",
 			Title:        "Auth Code",
@@ -200,6 +197,7 @@ func getTemplateData(ud *UserData, udError userDataError, isAuthed bool, r *http
 				Label:   "Authorize",
 				OnClick: template.JS(`window.open("` + oauth.TraktOAuthConfig.AuthCodeURL(uuid.NewString()) + `", "_blank")`),
 			},
+			Hidden: !TraktEnabled,
 		},
 		MetaIdMovie: configure.Config{
 			Key:     "meta_id_movie",

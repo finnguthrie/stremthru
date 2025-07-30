@@ -118,7 +118,7 @@
     </div>
   </div>
 
-  {{if .TMDBEnabled}}
+  {{if not .TMDBTokenId.Hidden}}
   <div id="tmdb" class="relative border border-dashed rounded-sm mb-4 p-4" style="border-color: gray">
     <header class="w-full flex flex-row justify-between absolute px-4" style="top: -0.75rem; left: 0;">
       <span class="px-2" style="background-color: var(--pico-background-color);">
@@ -130,7 +130,7 @@
   </div>
   {{end}}
 
-  {{if .TraktEnabled}}
+  {{if not .TraktTokenId.Hidden}}
   <div id="trakt" class="relative border border-dashed rounded-sm mb-4 p-4" style="border-color: gray">
     <header class="w-full flex flex-row justify-between absolute px-4" style="top: -0.75rem; left: 0;">
       <span class="px-2" style="background-color: var(--pico-background-color);">
