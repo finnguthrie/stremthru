@@ -14,6 +14,7 @@ import (
 	"github.com/MunifTanjim/stremthru/internal/imdb_title"
 	"github.com/MunifTanjim/stremthru/internal/mdblist"
 	"github.com/MunifTanjim/stremthru/internal/shared"
+	stremio_shared "github.com/MunifTanjim/stremthru/internal/stremio/shared"
 	"github.com/MunifTanjim/stremthru/internal/tmdb"
 	"github.com/MunifTanjim/stremthru/internal/trakt"
 	"github.com/MunifTanjim/stremthru/stremio"
@@ -347,13 +348,12 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 		for i := range list.Medias {
 			media := &list.Medias[i]
 
-			poster := media.Cover
-
 			meta := stremio.MetaPreview{
 				Type:        "anime",
 				Name:        media.Title,
 				Description: media.Description,
-				Poster:      poster,
+				Poster:      media.Cover,
+				Background:  media.Banner,
 				PosterShape: stremio.MetaPosterShapePoster,
 				Genres:      media.Genres,
 				ReleaseInfo: strconv.Itoa(media.StartYear),
@@ -382,6 +382,7 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 				Name:        item.Title,
 				Poster:      poster,
 				PosterShape: stremio.MetaPosterShapePoster,
+				Background:  stremio_shared.GetCinemetaBackgroundURL(item.IMDBId),
 				Genres:      item.Genre,
 				ReleaseInfo: strconv.Itoa(item.ReleaseYear),
 			}
@@ -402,6 +403,7 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 				Description: item.Overview,
 				Poster:      item.PosterURL(tmdb.PosterSizeW500),
 				PosterShape: stremio.MetaPosterShapePoster,
+				Background:  item.BackdropURL(tmdb.BackdropSizeW1280),
 				Genres:      item.GenreNames(),
 				ReleaseInfo: item.ReleaseDate.Format("2006"),
 			}
@@ -436,6 +438,7 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 				Description: item.Overview,
 				Poster:      item.Poster,
 				PosterShape: stremio.MetaPosterShapePoster,
+				Background:  item.Fanart,
 				Genres:      item.Genres,
 				ReleaseInfo: strconv.Itoa(item.Year),
 				IMDBRating:  strconv.FormatFloat(float64(item.Rating)/10, 'f', 1, 32),
@@ -450,6 +453,9 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 			}
 			if meta.Poster != "" {
 				meta.Poster = "https://" + meta.Poster
+			}
+			if meta.Background != "" {
+				meta.Background = "https://" + meta.Background
 			}
 			if item.Trailer != "" {
 				if trailer, err := url.Parse(item.Trailer); err == nil && trailer.Host == "youtube.com" {

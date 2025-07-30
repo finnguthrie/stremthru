@@ -65,10 +65,6 @@ func fetchMeta(sType, imdbId, clientIp string) (stremio.MetaHandlerResponse, err
 	return meta, nil
 }
 
-func getPosterUrl(imdbId string) string {
-	return "https://images.metahub.space/poster/small/" + imdbId + "/img"
-}
-
 func getMetaPreviewDescription(description string, r *ptt.Result, includeSeriesMeta bool) string {
 	if r.Title != "" {
 		description += " [ ✏️ " + r.Title + " ]"

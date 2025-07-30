@@ -9,9 +9,9 @@ import (
 type MetaPosterShape string
 
 const (
-	MetaPosterShapeSquare    MetaPosterShape = "square"
-	MetaPosterShapePoster    MetaPosterShape = "poster"
-	MetaPosterShapeLandscape MetaPosterShape = "landscape"
+	MetaPosterShapeSquare    MetaPosterShape = "square"    // 1:1
+	MetaPosterShapePoster    MetaPosterShape = "poster"    // 1:0.675
+	MetaPosterShapeLandscape MetaPosterShape = "landscape" // 1:1.77
 )
 
 type MetaTrailerType string
@@ -186,4 +186,6 @@ type MetaPreview struct {
 	Links       []MetaLink    `json:"links,omitempty"`
 	Description string        `json:"description,omitempty"`
 	Trailers    []MetaTrailer `json:"trailers,omitempty"`
+
+	Background string `json:"background,omitempty"` // undocumented
 }

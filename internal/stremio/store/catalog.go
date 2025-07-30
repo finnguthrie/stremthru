@@ -10,6 +10,7 @@ import (
 
 	"github.com/MunifTanjim/stremthru/internal/cache"
 	"github.com/MunifTanjim/stremthru/internal/shared"
+	stremio_shared "github.com/MunifTanjim/stremthru/internal/stremio/shared"
 	stremio_store_usenet "github.com/MunifTanjim/stremthru/internal/stremio/store/usenet"
 	stremio_store_webdl "github.com/MunifTanjim/stremthru/internal/stremio/store/webdl"
 	"github.com/MunifTanjim/stremthru/internal/torrent_info"
@@ -348,7 +349,8 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 		item := &items[i]
 		if stremId := stremIdByHash.Get(item.hash); stremId != "" {
 			stremId, _, _ = strings.Cut(stremId, ":")
-			item.Poster = getPosterUrl(stremId)
+			item.Poster = stremio_shared.GetCinemetaPosterURL(stremId)
+			item.Background = stremio_shared.GetCinemetaBackgroundURL(stremId)
 		}
 		res.Metas = append(res.Metas, item.MetaPreview)
 	}
