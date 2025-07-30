@@ -22,7 +22,7 @@ import (
 var IsPublicInstance = config.IsPublicInstance
 var MaxPublicInstanceListCount = 10
 var TraktEnabled = config.Integration.Trakt.IsEnabled()
-var AniListEnabled = config.Feature.IsEnabled("anime")
+var AnimeEnabled = config.Feature.IsEnabled("anime")
 var TMDBEnabled = config.Integration.TMDB.IsEnabled()
 
 func GetMetaIdMovieOptions(ud *UserData) []configure.ConfigOption {
@@ -224,6 +224,7 @@ func getTemplateData(ud *UserData, udError userDataError, isAuthed bool, r *http
 			Default: ud.MetaIdAnime,
 			Error:   udError.meta_id_anime,
 			Options: GetMetaIdAnimeOptions(ud),
+			Hidden:  !AnimeEnabled,
 		},
 		Shuffle: configure.Config{
 			Key:   "shuffle",
@@ -360,7 +361,7 @@ var executeTemplate = func() stremio_template.Executor[TemplateData] {
 		td.CanRemoveList = len(td.Lists) > 1
 
 		td.SupportedServices = []supportedService{}
-		if AniListEnabled {
+		if AnimeEnabled {
 			td.SupportedServices = append(td.SupportedServices, supportedService{
 				Name:     "AniList",
 				Hostname: "anilist.co",

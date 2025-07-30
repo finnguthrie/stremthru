@@ -237,7 +237,7 @@ func getUserData(r *http.Request, isAuthed bool) (*UserData, error) {
 
 			switch listUrl.Hostname() {
 			case "anilist.co":
-				if !AniListEnabled {
+				if !AnimeEnabled {
 					udErr.list_urls[idx] = "Unsupported List URL"
 					continue
 				}
