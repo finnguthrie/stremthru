@@ -111,13 +111,27 @@ func MatchFileByStremId(files []store.MagnetFile, sid string, magnetHash string,
 			return file
 		}
 	}
-	if strings.HasPrefix(sid, "kitsu:") {
-		kitsuId, episode, _ := strings.Cut(strings.TrimPrefix(sid, "kitsu:"), ":")
-		anidbId, season, err := anime.GetAniDBIdByKitsuId(kitsuId)
+
+	isKitsuId := strings.HasPrefix(sid, "kitsu:")
+	isMALId := strings.HasPrefix(sid, "mal:")
+	isAnimeId := isKitsuId || isMALId
+	if isAnimeId {
+		var anidbId, season, episode string
+		var err error
+		if isKitsuId {
+			kitsuId, kitsuEpisode, _ := strings.Cut(strings.TrimPrefix(sid, "kitsu:"), ":")
+			anidbId, season, err = anime.GetAniDBIdByKitsuId(kitsuId)
+			episode = kitsuEpisode
+		} else if isMALId {
+			malId, malEpisode, _ := strings.Cut(strings.TrimPrefix(sid, "mal:"), ":")
+			anidbId, season, err = anime.GetAniDBIdByMALId(malId)
+			episode = malEpisode
+		}
 		if err != nil {
-			log.Error("failed to get anidb id by kitsu id", "error", err, "kitsu_id", kitsuId)
+			log.Error("failed to get anidb id for anime", "error", err, "sid", sid)
 			return nil
 		}
+
 		tInfo, err := torrent_info.GetByHash(magnetHash)
 		if err != nil {
 			log.Error("failed to get torrent info by hash", "error", err, "hash", magnetHash)

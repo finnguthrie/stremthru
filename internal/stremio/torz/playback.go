@@ -106,7 +106,9 @@ func handleStrem(w http.ResponseWriter, r *http.Request) {
 
 		isIMDBId := strings.HasPrefix(sid, "tt")
 		isKitsuId := strings.HasPrefix(sid, "kitsu:")
-		shouldTagStream := isIMDBId || isKitsuId
+		isMALId := strings.HasPrefix(sid, "mal:")
+		isAnimeId := isKitsuId || isMALId
+		shouldTagStream := isIMDBId || isAnimeId
 
 		magnet, err = stremio_shared.WaitForMagnetStatus(ctx, magnet, store.MagnetStatusDownloaded, 3, 5*time.Second)
 		if err != nil {
@@ -169,7 +171,7 @@ func handleStrem(w http.ResponseWriter, r *http.Request) {
 		if shouldTagStream {
 			if isIMDBId {
 				torrent_stream.TagStremId(magnet.Hash, file.Name, sid)
-			} else if isKitsuId {
+			} else if isAnimeId {
 				go torrent_stream.TagAnimeStremId(magnet.Hash, file.Name, sid)
 			}
 		}

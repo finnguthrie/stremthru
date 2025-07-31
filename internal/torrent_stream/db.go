@@ -134,6 +134,30 @@ func getAnimeFileForKitsu(hash string, asid string) (*File, error) {
 	return &file, nil
 }
 
+var query_get_anime_file_for_mal = fmt.Sprintf(
+	`SELECT %s, %s, %s FROM %s WHERE %s = ? AND %s = CONCAT((SELECT %s FROM %s WHERE %s = ?), ':', CAST(? AS varchar))`,
+	Column.Name, Column.Idx, Column.Size,
+	TableName,
+	Column.Hash,
+	Column.ASId,
+	anime.IdMapColumn.AniDB,
+	anime.IdMapTableName,
+	anime.IdMapColumn.MAL,
+)
+
+func getAnimeFileForMAL(hash string, asid string) (*File, error) {
+	malId, episode, _ := strings.Cut(strings.TrimPrefix(asid, "mal:"), ":")
+	row := db.QueryRow(query_get_anime_file_for_mal, hash, malId, episode)
+	var file File
+	if err := row.Scan(&file.Name, &file.Idx, &file.Size); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &file, nil
+}
+
 var query_get_file = fmt.Sprintf(
 	"SELECT %s, %s, %s FROM %s WHERE %s = ? AND %s = ?",
 	Column.Name, Column.Idx, Column.Size,
@@ -145,6 +169,9 @@ var query_get_file = fmt.Sprintf(
 func GetFile(hash string, sid string) (*File, error) {
 	if strings.HasPrefix(sid, "kitsu:") {
 		return getAnimeFileForKitsu(hash, sid)
+	}
+	if strings.HasPrefix(sid, "mal:") {
+		return getAnimeFileForMAL(hash, sid)
 	}
 	row := db.QueryRow(query_get_file, hash, sid)
 	var file File
@@ -327,13 +354,21 @@ var query_tag_anime_strem_id = fmt.Sprintf(
 )
 
 func TagAnimeStremId(hash string, filename string, sid string) {
-	if !strings.HasPrefix(sid, "kitsu:") {
+	var anidbId, episode string
+	var err error
+	if kitsuSid, ok := strings.CutPrefix(sid, "kitsu:"); ok {
+		kitsuId, kitsuEpisode, _ := strings.Cut(kitsuSid, ":")
+		anidbId, _, err = anime.GetAniDBIdByKitsuId(kitsuId)
+		episode = kitsuEpisode
+	} else if malSid, ok := strings.CutPrefix(sid, "mal:"); ok {
+		malId, malEpisode, _ := strings.Cut(malSid, ":")
+		anidbId, _, err = anime.GetAniDBIdByMALId(malId)
+		episode = malEpisode
+	} else {
 		return
 	}
-	kitsuId, episode, _ := strings.Cut(strings.TrimPrefix(sid, "kitsu:"), ":")
-	anidbId, _, err := anime.GetAniDBIdByKitsuId(kitsuId)
 	if err != nil {
-		log.Error("failed to get anidb id by kitsu id", "error", err, "sid", sid)
+		log.Error("failed to get anidb id for anime", "error", err, "sid", sid)
 		return
 	}
 	asid := anidbId + ":" + episode

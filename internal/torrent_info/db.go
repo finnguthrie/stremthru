@@ -1039,15 +1039,29 @@ var query_list_hashes_by_stremid_from_imdb_torrent_for_series = fmt.Sprintf(
 
 func ListHashesByStremId(stremId string) ([]string, error) {
 	if !strings.HasPrefix(stremId, "tt") {
-		if strings.HasPrefix(stremId, "kitsu:") {
-			kitsuId, episode, _ := strings.Cut(strings.TrimPrefix(stremId, "kitsu:"), ":")
-			anidbId, season, err := anime.GetAniDBIdByKitsuId(kitsuId)
-			if err != nil || anidbId == "" {
+		var anidbId, season, episode string
+		var err error
+		if kitsuStremId, ok := strings.CutPrefix(stremId, "kitsu:"); ok {
+			kitsuId, kitsuEpisode, _ := strings.Cut(kitsuStremId, ":")
+			anidbId, season, err = anime.GetAniDBIdByKitsuId(kitsuId)
+			if err != nil {
 				return nil, err
 			}
-			return listHashesForAnimeByAniDBId(anidbId, season, episode)
+			episode = kitsuEpisode
+		} else if malStremId, ok := strings.CutPrefix(stremId, "mal:"); ok {
+			malId, malEpisode, _ := strings.Cut(malStremId, ":")
+			anidbId, season, err = anime.GetAniDBIdByMALId(malId)
+			if err != nil {
+				return nil, err
+			}
+			episode = malEpisode
+		} else {
+			return nil, fmt.Errorf("unsupported strem id: %s", stremId)
 		}
-		return nil, fmt.Errorf("unsupported strem id: %s", stremId)
+		if anidbId == "" {
+			return []string{}, nil
+		}
+		return listHashesForAnimeByAniDBId(anidbId, season, episode)
 	}
 
 	query := ""

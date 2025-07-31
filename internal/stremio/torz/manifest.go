@@ -46,7 +46,7 @@ func GetManifest(r *http.Request, ud *UserData) *stremio.Manifest {
 
 	if config.Feature.IsEnabled(config.FeatureAnime) {
 		streamResource.Types = append(streamResource.Types, "anime")
-		streamResource.IDPrefixes = append(streamResource.IDPrefixes, "kitsu:")
+		streamResource.IDPrefixes = append(streamResource.IDPrefixes, "kitsu:", "mal:")
 	}
 
 	manifest := &stremio.Manifest{

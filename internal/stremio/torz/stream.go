@@ -68,13 +68,16 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 
 	isImdbId := strings.HasPrefix(id, "tt")
 	isKitsuId := strings.HasPrefix(id, "kitsu:")
+	isMALId := strings.HasPrefix(id, "mal:")
+	isAnime := isKitsuId || isMALId
+
 	if isImdbId {
 		if contentType != string(stremio.ContentTypeMovie) && contentType != string(stremio.ContentTypeSeries) {
 			shared.ErrorBadRequest(r, "unsupported type: "+contentType).Send(w, r)
 			return
 		}
-	} else if isKitsuId {
-		if contentType != "anime" && contentType != string(stremio.ContentTypeSeries) {
+	} else if isAnime {
+		if contentType != string(stremio.ContentTypeMovie) && contentType != string(stremio.ContentTypeSeries) && contentType != "anime" {
 			shared.ErrorBadRequest(r, "unsupported type: "+contentType).Send(w, r)
 			return
 		}
@@ -158,12 +161,22 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 		var file *torrent_stream.File
 		if files, ok := filesByHashes[hash]; ok {
 			idToMatch := id
-			if isKitsuId {
-				kitsuId, episode, _ := strings.Cut(strings.TrimPrefix(id, "kitsu:"), ":")
-				anidbId, _, err := anime.GetAniDBIdByKitsuId(kitsuId)
+			if isAnime {
+				var anidbId, episode string
+				var err error
+
+				if isKitsuId {
+					kitsuId, kitsuEpisode, _ := strings.Cut(strings.TrimPrefix(id, "kitsu:"), ":")
+					anidbId, _, err = anime.GetAniDBIdByKitsuId(kitsuId)
+					episode = kitsuEpisode
+				} else if isMALId {
+					malId, malEpisode, _ := strings.Cut(strings.TrimPrefix(id, "mal:"), ":")
+					anidbId, _, err = anime.GetAniDBIdByMALId(malId)
+					episode = malEpisode
+				}
 				if err != nil || anidbId == "" {
 					if err != nil {
-						log.Error("failed to get anidb id for kitsu id", "kitsu_id", kitsuId, "error", err)
+						log.Error("failed to get anidb id for anime", "id", id, "error", err)
 					}
 					idToMatch = ""
 				} else {
