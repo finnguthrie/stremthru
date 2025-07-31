@@ -37,6 +37,10 @@ func (ws WrappedStream) GetSize() string {
 	return ws.r.Size
 }
 
+func (ws WrappedStream) GetHDR() string {
+	return strings.Join(ws.r.HDR, "|")
+}
+
 func (st StreamTransformer) Do(stream *stremio.Stream, sType string, tryReconfigure bool) (*WrappedStream, error) {
 	s := &WrappedStream{Stream: stream}
 

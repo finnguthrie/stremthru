@@ -45,6 +45,10 @@ func (s wrappedStream) GetSize() string {
 	return s.r.Size
 }
 
+func (s wrappedStream) GetHDR() string {
+	return strings.Join(s.r.HDR, "|")
+}
+
 func handleStream(w http.ResponseWriter, r *http.Request) {
 	if !IsMethod(r, http.MethodGet) {
 		shared.ErrorMethodNotAllowed(r).Send(w, r)

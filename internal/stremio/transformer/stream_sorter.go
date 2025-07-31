@@ -14,12 +14,14 @@ const (
 	StreamSortableFieldResolution StreamSortableField = "resolution"
 	StreamSortableFieldQuality    StreamSortableField = "quality"
 	StreamSortableFieldSize       StreamSortableField = "size"
+	StreamSortableFieldHDR        StreamSortableField = "hdr"
 )
 
 type StreamSortable interface {
 	GetQuality() string
 	GetResolution() string
 	GetSize() string
+	GetHDR() string
 	IsSortable() bool
 }
 
@@ -107,6 +109,10 @@ func getSizeRank(input string) int64 {
 	return util.ToBytes(input)
 }
 
+func getHDRRank(input string) int64 {
+	return int64(len(input))
+}
+
 func getFieldRank(str StreamSortable, field StreamSortableField) int64 {
 	switch field {
 	case StreamSortableFieldResolution:
@@ -115,6 +121,8 @@ func getFieldRank(str StreamSortable, field StreamSortableField) int64 {
 		return getQualityRank(str.GetQuality())
 	case StreamSortableFieldSize:
 		return getSizeRank(str.GetSize())
+	case StreamSortableFieldHDR:
+		return getHDRRank(str.GetHDR())
 	default:
 		panic("Unsupported field for sorting")
 	}
@@ -132,7 +140,7 @@ func parseSortConfig(config string) []StreamSorterConfig {
 		desc := strings.HasPrefix(part, "-")
 		field := StreamSortableField(strings.TrimPrefix(part, "-"))
 		switch field {
-		case StreamSortableFieldResolution, StreamSortableFieldQuality, StreamSortableFieldSize:
+		case StreamSortableFieldResolution, StreamSortableFieldQuality, StreamSortableFieldSize, StreamSortableFieldHDR:
 			sortConfigs = append(sortConfigs, StreamSorterConfig{Field: field, Desc: desc})
 		}
 	}
