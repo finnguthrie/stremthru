@@ -22,7 +22,7 @@ import (
 
 type CachedCatalogItem struct {
 	stremio.MetaPreview
-	hash string
+	Hash string
 }
 
 var catalogCache = func() cache.Cache[[]CachedCatalogItem] {
@@ -64,7 +64,7 @@ func getUsenetCatalogItems(s store.Store, storeToken string, clientIp string, id
 						Name:        item.GetLargestFileName(),
 						PosterShape: stremio.MetaPosterShapePoster,
 					}, item.Hash}
-					cItem.Description = getMetaPreviewDescriptionForUsenet(cItem.hash, item.Name, cItem.Name)
+					cItem.Description = getMetaPreviewDescriptionForUsenet(cItem.Hash, item.Name, cItem.Name)
 					items = append(items, cItem)
 				}
 			}
@@ -106,7 +106,7 @@ func getWebDLCatalogItems(s store.Store, storeToken string, clientIp string, idP
 						Name:        item.Name,
 						PosterShape: stremio.MetaPosterShapePoster,
 					}, item.Hash}
-					cItem.Description = getMetaPreviewDescriptionForWebDL(cItem.hash, item.Name, false)
+					cItem.Description = getMetaPreviewDescriptionForWebDL(cItem.Hash, item.Name, false)
 					items = append(items, cItem)
 				}
 			}
@@ -319,7 +319,7 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 	hashes := make([]string, len(items))
 	for i := range items {
 		item := &items[i]
-		hashes[i] = item.hash
+		hashes[i] = item.Hash
 	}
 
 	includeWebDLsMetaPreview := ud.EnableWebDL && (idr.storeCode == store.StoreCodeRealDebrid || idr.storeCode == store.StoreCodePremiumize || idr.storeCode == store.StoreCodeAllDebrid)
@@ -347,7 +347,7 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 	}
 	for i := range items {
 		item := &items[i]
-		if stremId := stremIdByHash.Get(item.hash); stremId != "" {
+		if stremId := stremIdByHash.Get(item.Hash); stremId != "" {
 			stremId, _, _ = strings.Cut(stremId, ":")
 			item.Poster = stremio_shared.GetCinemetaPosterURL(stremId)
 			item.Background = stremio_shared.GetCinemetaBackgroundURL(stremId)
