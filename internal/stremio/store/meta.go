@@ -46,7 +46,8 @@ func fetchMeta(sType, imdbId, clientIp string) (stremio.MetaHandlerResponse, err
 
 	cacheKey := sType + ":" + imdbId
 	if !metaCache.Get(cacheKey, &meta) {
-		m, err, _ := fetchMetaGroup.Do(cacheKey, func() (any, error) {
+		start := time.Now()
+		m, err, shared := fetchMetaGroup.Do(cacheKey, func() (any, error) {
 			r, err := client.FetchMeta(&stremio_addon.FetchMetaParams{
 				BaseURL:  cinemetaBaseUrl,
 				Type:     sType,
@@ -57,6 +58,9 @@ func fetchMeta(sType, imdbId, clientIp string) (stremio.MetaHandlerResponse, err
 		})
 		if err != nil {
 			return meta, err
+		}
+		if !shared {
+			log.Debug("fetched meta", "type", sType, "id", imdbId, "duration", time.Since(start))
 		}
 		meta = m.(stremio.MetaHandlerResponse)
 		metaCache.Add(cacheKey, meta)
