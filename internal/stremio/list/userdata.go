@@ -166,7 +166,7 @@ func getUserData(r *http.Request, isAuthed bool) (*UserData, error) {
 		}
 
 		isMDBListEnabled := ud.MDBListAPIkey != ""
-		isTMDBTvConfigured := TMDBEnabled && ud.TMDBTokenId != ""
+		isTMDBConfigured := TMDBEnabled && ud.TMDBTokenId != ""
 		isTraktTvConfigured := TraktEnabled && ud.TraktTokenId != ""
 
 		if isMDBListEnabled {
@@ -177,12 +177,12 @@ func getUserData(r *http.Request, isAuthed bool) (*UserData, error) {
 			}
 		}
 
-		if isTMDBTvConfigured {
+		if isTMDBConfigured {
 			ud.tmdbToken, err = ud.getTMDBToken()
 			if err != nil {
 				udErr.tmdb_token_id = err.Error()
 			}
-			isTMDBTvConfigured = ud.TMDBTokenId != ""
+			isTMDBConfigured = ud.TMDBTokenId != ""
 		}
 
 		if isTraktTvConfigured {
@@ -309,8 +309,8 @@ func getUserData(r *http.Request, isAuthed bool) (*UserData, error) {
 				}
 				ud.Lists[idx] = "mdblist:" + list.Id
 
-			case "www.themoviedb.org":
-				if !isTMDBTvConfigured {
+			case "www.themoviedb.org", "themoviedb.org":
+				if !isTMDBConfigured {
 					if TMDBEnabled {
 						udErr.list_urls[idx] = "TMDB Auth Code is required"
 					} else {
