@@ -1,6 +1,10 @@
 package stremio
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+	"strconv"
+)
 
 type ResourceName string
 
@@ -56,11 +60,39 @@ type Addon struct {
 	Flags         *AddonFlags `json:"flags,omitempty"`
 }
 
+type CatalogExtraOptions []string
+
+func (opts *CatalogExtraOptions) UnmarshalJSON(data []byte) error {
+	var items []any
+	if err := json.Unmarshal(data, &items); err != nil {
+		return err
+	}
+
+	result := make([]string, len(items))
+	for i, item := range items {
+		switch v := item.(type) {
+		case string:
+			result[i] = v
+		case float64:
+			result[i] = strconv.FormatFloat(v, 'f', -1, 64)
+		case int:
+			result[i] = strconv.Itoa(v)
+		case bool:
+			result[i] = strconv.FormatBool(v)
+		default:
+			result[i] = fmt.Sprintf("%v", v)
+		}
+	}
+
+	*opts = CatalogExtraOptions(result)
+	return nil
+}
+
 type CatalogExtra struct {
-	Name         string   `json:"name"`
-	IsRequired   bool     `json:"isRequired,omitempty"`
-	Options      []string `json:"options,omitempty"`
-	OptionsLimit int      `json:"optionsLimit,omitempty"`
+	Name         string              `json:"name"`
+	IsRequired   bool                `json:"isRequired,omitempty"`
+	Options      CatalogExtraOptions `json:"options,omitempty"`
+	OptionsLimit int                 `json:"optionsLimit,omitempty"`
 }
 
 type Catalog struct {
