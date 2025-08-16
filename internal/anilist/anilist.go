@@ -225,7 +225,7 @@ func FetchSearchList(name string) (*List, error) {
 		for mIdx := range medias {
 			mediaId := medias[mIdx].Id
 			list.MediaIds = append(list.MediaIds, mediaId)
-			list.ScoreByMediaId[mediaId] = totalItems - page*searchAnimeListPerPage + mIdx
+			list.ScoreByMediaId[mediaId] = totalItems - (page-1)*searchAnimeListPerPage - mIdx
 		}
 		if len(medias) < searchAnimeListPerPage {
 			break
