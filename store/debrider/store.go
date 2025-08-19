@@ -197,22 +197,21 @@ func (s *StoreClient) CheckMagnet(params *store.CheckMagnetParams) (*store.Check
 			Files: []torrent_stream.File{},
 		}
 		if detail, ok := ldByHash[hash]; ok {
-			if !detail.Cached {
-				continue
-			}
-			item.Status = store.MagnetStatusCached
-			for idx, f := range detail.Files {
-				file := torrent_stream.File{
-					Idx:  idx,
-					Name: filepath.Base("/" + f.Name),
-					Size: f.Size,
+			if detail.Cached {
+				item.Status = store.MagnetStatusCached
+				for idx, f := range detail.Files {
+					file := torrent_stream.File{
+						Idx:  idx,
+						Name: filepath.Base("/" + f.Name),
+						Size: f.Size,
+					}
+					tInfo.Files = append(tInfo.Files, file)
+					item.Files = append(item.Files, store.MagnetFile{
+						Idx:  file.Idx,
+						Name: file.Name,
+						Size: file.Size,
+					})
 				}
-				tInfo.Files = append(tInfo.Files, file)
-				item.Files = append(item.Files, store.MagnetFile{
-					Idx:  file.Idx,
-					Name: file.Name,
-					Size: file.Size,
-				})
 			}
 		}
 		data.Items = append(data.Items, item)

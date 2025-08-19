@@ -8,7 +8,8 @@ type CheckLinkAvailabilityDataItemFile struct {
 
 type CheckLinkAvailabilityDataItem struct {
 	Cached bool                                `json:"cached"`
-	Files  []CheckLinkAvailabilityDataItemFile `json:"files"`
+	Hash   string                              `json:"hash"`  // only when cached
+	Files  []CheckLinkAvailabilityDataItemFile `json:"files"` // only when cached
 }
 
 type CheckLinkAvailabilityData struct {
@@ -24,6 +25,6 @@ type CheckLinkAvailabilityParams struct {
 func (c APIClient) CheckLinkAvailability(params *CheckLinkAvailabilityParams) (APIResponse[CheckLinkAvailabilityData], error) {
 	params.JSON = params
 	response := &CheckLinkAvailabilityData{}
-	res, err := c.Request("POST", "/v1/link/lookup", params, response)
+	res, err := c.Request("POST", "/v1/link/dlookup", params, response)
 	return newAPIResponse(res, *response), err
 }
