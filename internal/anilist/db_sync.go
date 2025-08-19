@@ -184,6 +184,7 @@ func syncList(l *AniListList) error {
 			dbMedia := AniListMedia{
 				Id:          media.Id,
 				Title:       media.Title,
+				Type:        media.Format,
 				Description: media.Description,
 				Banner:      media.BannerImage,
 				Cover:       media.CoverImage,

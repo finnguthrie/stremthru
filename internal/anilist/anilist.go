@@ -237,10 +237,10 @@ func FetchSearchList(name string) (*List, error) {
 type fetchMediasQuery struct {
 	Page struct {
 		Media []struct {
-			Id    int
-			IdMal int
-			Type  string
-			Title struct {
+			Id     int
+			IdMal  int
+			Format string
+			Title  struct {
 				English string
 				Romaji  string
 			}
@@ -262,7 +262,7 @@ type fetchMediasQuery struct {
 type Media struct {
 	Id          int
 	IdMal       int
-	Type        string
+	Format      string
 	Title       string
 	Description string
 	BannerImage string
@@ -293,7 +293,7 @@ func FetchMedias(mediaIds []int) ([]Media, error) {
 			media := Media{
 				Id:          m.Id,
 				IdMal:       m.IdMal,
-				Type:        m.Type,
+				Format:      m.Format,
 				Title:       m.Title.English,
 				Description: m.Description,
 				BannerImage: m.BannerImage,
