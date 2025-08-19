@@ -262,7 +262,7 @@ type fetchMediasQuery struct {
 type Media struct {
 	Id          int
 	IdMal       int
-	Format      string
+	Format      MediaFormat
 	Title       string
 	Description string
 	BannerImage string
@@ -293,7 +293,7 @@ func FetchMedias(mediaIds []int) ([]Media, error) {
 			media := Media{
 				Id:          m.Id,
 				IdMal:       m.IdMal,
-				Format:      m.Format,
+				Format:      MediaFormat(m.Format),
 				Title:       m.Title.English,
 				Description: m.Description,
 				BannerImage: m.BannerImage,
@@ -326,6 +326,19 @@ const (
 	MediaFormatNovel   MediaFormat = "NOVEL"
 	MediaFormatOneShot MediaFormat = "ONE_SHOT"
 )
+
+func (mf MediaFormat) ToSimple() string {
+	switch mf {
+	case MediaFormatTV, MediaFormatTVShort, MediaFormatOVA, MediaFormatONA:
+		return "series"
+	case MediaFormatMovie, MediaFormatSpecial, MediaFormatOneShot:
+		return "movie"
+	case MediaFormatMusic, MediaFormatManga, MediaFormatNovel:
+		return ""
+	default:
+		return ""
+	}
+}
 
 type fetchAnimeMediaFormatInfoQuery struct {
 	Page struct {

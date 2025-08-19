@@ -349,7 +349,7 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 			media := &list.Medias[i]
 
 			meta := stremio.MetaPreview{
-				Type:        "anime",
+				Type:        stremio.ContentType(media.Type.ToSimple()),
 				Name:        media.Title,
 				Description: media.Description,
 				Poster:      media.Cover,
@@ -357,6 +357,9 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 				PosterShape: stremio.MetaPosterShapePoster,
 				Genres:      media.Genres,
 				ReleaseInfo: strconv.Itoa(media.StartYear),
+			}
+			if meta.Type != stremio.ContentTypeMovie && meta.Type != stremio.ContentTypeSeries {
+				meta.Type = "anime"
 			}
 			catalogItems = append(catalogItems, catalogItem{meta, *media})
 		}

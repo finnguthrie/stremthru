@@ -17,6 +17,8 @@ import (
 	"github.com/MunifTanjim/stremthru/internal/util"
 )
 
+var anilist_invalidate_before = util.MustParseTime(time.DateTime, "2025-08-19 18:00:00")
+
 const ListTableName = "anilist_list"
 
 type AniListList struct {
@@ -58,7 +60,7 @@ func (l *AniListList) GetDisplayName() string {
 }
 
 func (l *AniListList) IsStale() bool {
-	return time.Now().After(l.UpdatedAt.Add(config.Integration.AniList.ListStaleTime + util.GetRandomDuration(5*time.Second, 5*time.Minute)))
+	return time.Now().After(l.UpdatedAt.Add(config.Integration.AniList.ListStaleTime+util.GetRandomDuration(5*time.Second, 5*time.Minute))) || l.UpdatedAt.Before(anilist_invalidate_before)
 }
 
 type ListColumnStruct struct {
@@ -99,7 +101,7 @@ func (genre *genreList) Scan(value any) error {
 
 type AniListMedia struct {
 	Id          int          `json:"id"`
-	Type        string       `json:"type"`
+	Type        MediaFormat  `json:"type"`
 	Title       string       `json:"title"`
 	Description string       `json:"description"`
 	Banner      string       `json:"banner"`
@@ -115,7 +117,7 @@ type AniListMedia struct {
 }
 
 func (m *AniListMedia) IsStale() bool {
-	return time.Now().After(m.UpdatedAt.Add(5 * 24 * time.Hour))
+	return time.Now().After(m.UpdatedAt.Add(5*24*time.Hour)) || m.UpdatedAt.Before(anilist_invalidate_before)
 }
 
 type MediaColumnStruct struct {
