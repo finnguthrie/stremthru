@@ -81,6 +81,7 @@ const (
 	TorrentInfoSourceMediaFusion TorrentInfoSource = "mfn"
 	TorrentInfoSourceTorrentio   TorrentInfoSource = "tio"
 	TorrentInfoSourceAllDebrid   TorrentInfoSource = "ad"
+	TorrentInfoSourceDebrider    TorrentInfoSource = "dr"
 	TorrentInfoSourceDebridLink  TorrentInfoSource = "dl"
 	TorrentInfoSourceEasyDebrid  TorrentInfoSource = "ed"
 	TorrentInfoSourceOffcloud    TorrentInfoSource = "oc"
@@ -707,6 +708,9 @@ func Upsert(items []TorrentInfoInsertData, category TorrentInfoCategory, discard
 			tSource := string(t.Source)
 			for _, f := range t.Files {
 				if f.Name == "" {
+					continue
+				}
+				if t.Source == TorrentInfoSourceDebrider && f.Name == "__archive__.zip" {
 					continue
 				}
 				if f.Source == "" {
