@@ -136,6 +136,10 @@ func syncList(l *MDBListList, apiKey string) error {
 			}
 			for i := range res.Data {
 				item := &res.Data[i]
+				rank := item.Rank
+				if rank == 0 {
+					rank = i
+				}
 				l.Items = append(l.Items, MDBListItem{
 					IMDBId:         item.ImdbId,
 					Adult:          item.Adult == 1,
@@ -147,7 +151,7 @@ func syncList(l *MDBListList, apiKey string) error {
 					SpokenLanguage: item.SpokenLanguage,
 					Genre:          item.Genre,
 
-					Rank:   item.Rank,
+					Rank:   rank,
 					TmdbId: strconv.Itoa(item.Id),
 					TvdbId: strconv.Itoa(item.TvdbId),
 				})
