@@ -225,6 +225,10 @@ Comma separated list of features to enable/disable.
 Use `-` prefix to disable opt-out feature, and `+` prefix to enable opt-in feature.
 Otherwise only the specified features will be enabled.
 
+#### `STREMTHRU_STREMIO_LIST_PUBLIC_MAX_LIST_COUNT`
+
+Max number of list allowed on public instance.
+
 #### `STREMTHRU_STREMIO_TORZ_LAZY_PULL`
 
 If `true`, torz will pull from public database in the background,

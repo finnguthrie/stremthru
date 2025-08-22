@@ -21,7 +21,7 @@ import (
 )
 
 var IsPublicInstance = config.IsPublicInstance
-var MaxPublicInstanceListCount = 10
+var MaxPublicInstanceListCount = config.Stremio.List.PublicMaxListCount
 var TraktEnabled = config.Integration.Trakt.IsEnabled()
 var AnimeEnabled = config.Feature.IsEnabled("anime")
 var TMDBEnabled = config.Integration.TMDB.IsEnabled()
