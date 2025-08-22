@@ -61,10 +61,10 @@ func getUsenetCatalogItems(s store.Store, storeToken string, clientIp string, id
 					cItem := CachedCatalogItem{stremio.MetaPreview{
 						Id:          idPrefix + item.Id,
 						Type:        ContentTypeOther,
-						Name:        item.GetLargestFileName(),
+						Name:        item.Name,
 						PosterShape: stremio.MetaPosterShapePoster,
 					}, item.Hash}
-					cItem.Description = getMetaPreviewDescriptionForUsenet(cItem.Hash, item.Name, cItem.Name)
+					cItem.Description = getMetaPreviewDescriptionForUsenet(cItem.Hash, item.Name, item.GetLargestFileName())
 					items = append(items, cItem)
 				}
 			}

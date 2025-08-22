@@ -3,6 +3,7 @@ package stremio_store_usenet
 import (
 	"errors"
 	"net/http"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -59,6 +60,8 @@ func (n News) GetLargestFileName() string {
 	return name
 }
 
+var torboxGarbageNewsNameRegex = regexp.MustCompile(`(?i)^\[[a-z0-9]+\]\s*-\s*[a-z0-9]+$`)
+
 type ListNewsData struct {
 	Items      []News `json:"items"`
 	TotalItems int    `json:"total_items"`
@@ -95,6 +98,8 @@ func ListNews(params *ListNewsParams, storeName store.StoreName) (*ListNewsData,
 			} else if und.DownloadFinished && und.DownloadPresent {
 				item.Status = store.MagnetStatusDownloaded
 			}
+			hasGarbageName := torboxGarbageNewsNameRegex.MatchString(item.Name)
+			maxFileSize := int64(0)
 			for i := range und.Files {
 				f := &und.Files[i]
 				file := NewsFile{
@@ -103,6 +108,10 @@ func ListNews(params *ListNewsParams, storeName store.StoreName) (*ListNewsData,
 					Name: f.ShortName,
 					Path: "/" + f.Name,
 					Size: f.Size,
+				}
+				if hasGarbageName && file.Size > maxFileSize {
+					item.Name = file.Name
+					maxFileSize = file.Size
 				}
 				item.Files = append(item.Files, file)
 			}
@@ -166,6 +175,8 @@ func GetNews(params *GetNewsParams, storeName store.StoreName) (*News, error) {
 		if und.DownloadFinished && und.DownloadPresent {
 			item.Status = store.MagnetStatusDownloaded
 		}
+		hasGarbageName := torboxGarbageNewsNameRegex.MatchString(item.Name)
+		maxFileSize := int64(0)
 		for i := range und.Files {
 			f := &und.Files[i]
 			file := NewsFile{
@@ -174,6 +185,10 @@ func GetNews(params *GetNewsParams, storeName store.StoreName) (*News, error) {
 				Name: f.ShortName,
 				Path: "/" + f.Name,
 				Size: f.Size,
+			}
+			if hasGarbageName && file.Size > maxFileSize {
+				item.Name = file.Name
+				maxFileSize = file.Size
 			}
 			item.Files = append(item.Files, file)
 		}

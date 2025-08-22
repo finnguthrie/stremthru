@@ -260,7 +260,7 @@ func getStoreContentInfo(s store.Store, storeToken string, id string, clientIp s
 			AddedAt: news.AddedAt,
 			Hash:    news.Hash,
 			Id:      news.Id,
-			Name:    news.GetLargestFileName(),
+			Name:    news.Name,
 			Size:    news.Size,
 			Status:  news.Status,
 		}
