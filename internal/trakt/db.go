@@ -497,7 +497,7 @@ func upsertItems(tx db.Executor, items []TraktItem) error {
 				})
 			}
 		}
-		go util.LogError(log, meta.SetIdMaps(idMaps, meta.IdProviderIMDB), "failed to set id maps")
+		util.LogError(log, meta.SetIdMaps(idMaps, meta.IdProviderIMDB), "failed to set id maps")
 	}
 
 	return nil
