@@ -12,8 +12,8 @@ import (
 )
 
 var IsPublicInstance = config.IsPublicInstance
-var MaxPublicInstanceUpstreamCount = 3
-var MaxPublicInstanceStoreCount = 3
+var MaxPublicInstanceUpstreamCount = config.Stremio.Wrap.PublicMaxUpstreamCount
+var MaxPublicInstanceStoreCount = config.Stremio.Wrap.PublicMaxStoreCount
 
 var addon = func() *stremio_addon.Client {
 	return stremio_addon.NewClient(&stremio_addon.ClientConfig{})

@@ -230,6 +230,14 @@ Otherwise only the specified features will be enabled.
 If `true`, torz will pull from public database in the background,
 so on first query it'll return less results, but it'll be faster.
 
+#### `STREMTHRU_STREMIO_WRAP_PUBLIC_MAX_UPSTREAM_COUNT`
+
+Max number of upstream allowed on public instance.
+
+#### `STREMTHRU_STREMIO_WRAP_PUBLIC_MAX_STORE_COUNT`
+
+Max number of stores allowed on public instance.
+
 #### AniList Integration
 
 ##### `STREMTHRU_INTEGRATION_ANILIST_LIST_STALE_TIME`
