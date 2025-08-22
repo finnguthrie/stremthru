@@ -36,7 +36,7 @@ type Series struct {
 	NextAired            string       `json:"nextAired"`
 	Score                int64        `json:"score"`
 	Status               SeriesStatus `json:"status"`
-	OriginalCountry      string       `json:"originalCountry"`
+	OriginalCountry      CountryId    `json:"originalCountry"`
 	OriginalLanguage     string       `json:"originalLanguage"`
 	DefaultSeasonType    int          `json:"defaultSeasonType"`
 	IsOrderRandomized    bool         `json:"isOrderRandomized"`
@@ -151,6 +151,16 @@ func (s *ExtendedSeries) GetBackground() string {
 	for i := range s.Artworks {
 		artwork := &s.Artworks[i]
 		if artwork.Type == ArtworkTypeSeriesBackground {
+			return artwork.Image
+		}
+	}
+	return ""
+}
+
+func (s *ExtendedSeries) GetClearLogo() string {
+	for i := range s.Artworks {
+		artwork := &s.Artworks[i]
+		if artwork.Type == ArtworkTypeSeriesClearLogo {
 			return artwork.Image
 		}
 	}
