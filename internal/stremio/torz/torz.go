@@ -9,7 +9,7 @@ import (
 )
 
 var IsPublicInstance = config.IsPublicInstance
-var MaxPublicInstanceStoreCount = 3
+var MaxPublicInstanceStoreCount = config.Stremio.Torz.PublicMaxStoreCount
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/stremio/torz/configure", http.StatusFound)
