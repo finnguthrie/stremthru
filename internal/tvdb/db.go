@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -576,6 +577,21 @@ func GetItemById(itemType TVDBItemType, id int) (*TVDBItem, error) {
 	if err != nil {
 		return nil, err
 	}
-	item, _ := itemById[id]
+	item, ok := itemById[id]
+	if !ok {
+		return nil, nil
+	}
+	idType := meta.IdTypeUnknown
+	switch itemType {
+	case TVDBItemTypeMovie:
+		idType = meta.IdTypeMovie
+	case TVDBItemTypeSeries:
+		idType = meta.IdTypeShow
+	}
+	idMap, err := meta.GetIdMap(idType, "tvdb:"+strconv.Itoa(id))
+	if err != nil {
+		return nil, err
+	}
+	item.IdMap = idMap
 	return item, nil
 }
