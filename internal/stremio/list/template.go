@@ -211,7 +211,7 @@ func getTemplateData(ud *UserData, udError userDataError, isAuthed bool, r *http
 		},
 		MetaIdMovie: configure.Config{
 			Key:     "meta_id_movie",
-			Title:   "Preferred Meta ID (Movie)",
+			Title:   "Movie",
 			Type:    configure.ConfigTypeSelect,
 			Default: ud.MetaIdMovie,
 			Error:   udError.meta_id_movie,
@@ -219,7 +219,7 @@ func getTemplateData(ud *UserData, udError userDataError, isAuthed bool, r *http
 		},
 		MetaIdSeries: configure.Config{
 			Key:     "meta_id_series",
-			Title:   "Preferred Meta ID (Series)",
+			Title:   "Series",
 			Type:    configure.ConfigTypeSelect,
 			Default: ud.MetaIdSeries,
 			Error:   udError.meta_id_series,
@@ -227,7 +227,7 @@ func getTemplateData(ud *UserData, udError userDataError, isAuthed bool, r *http
 		},
 		MetaIdAnime: configure.Config{
 			Key:     "meta_id_anime",
-			Title:   "Preferred Meta ID (Anime)",
+			Title:   "Anime",
 			Type:    configure.ConfigTypeSelect,
 			Default: ud.MetaIdAnime,
 			Error:   udError.meta_id_anime,

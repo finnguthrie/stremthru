@@ -268,9 +268,24 @@
     {{template "configure_config.html" .RPDBAPIKey}}
   </div>
 
-  {{template "configure_config.html" .MetaIdMovie}}
-  {{template "configure_config.html" .MetaIdSeries}}
-  {{template "configure_config.html" .MetaIdAnime}}
+  <div id="meta_id" class="relative border border-dashed rounded-sm mb-4 p-4" style="border-color: gray">
+    <header class="w-full flex flex-row justify-between absolute px-4" style="top: -0.75rem; left: 0;">
+      <span class="px-2" style="background-color: var(--pico-background-color);">
+        Preferred Meta ID
+      </span>
+    </header>
+    <div class="flex flex-row flex-wrap gap-4">
+      <div class="grow">
+        {{template "configure_config.html" .MetaIdMovie}}
+      </div>
+      <div class="grow">
+        {{template "configure_config.html" .MetaIdSeries}}
+      </div>
+      <div class="grow">
+        {{template "configure_config.html" .MetaIdAnime}}
+      </div>
+    </div>
+  </div>
 
   {{template "configure_config.html" .Shuffle}}
 
