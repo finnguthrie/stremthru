@@ -399,17 +399,17 @@ func UpsertItems(tx db.Executor, items []TVDBItem) error {
 			return err
 		}
 
-		mappings := make([]meta.IdMap, 0, count)
+		idMaps := make([]meta.IdMap, 0, count)
 		for _, item := range cItems {
 			if err := setItemGenre(tx, item.Id, item.Type, item.Genres); err != nil {
 				return err
 			}
 
 			if item.IdMap != nil && item.IdMap.IMDB != "" {
-				mappings = append(mappings, *item.IdMap)
+				idMaps = append(idMaps, *item.IdMap)
 			}
 		}
-		go util.LogError(log, meta.SetIdMaps(mappings, meta.IdProviderIMDB), "failed to set id maps")
+		util.LogError(log, meta.SetIdMaps(idMaps, meta.IdProviderIMDB), "failed to set id maps")
 	}
 
 	return nil
