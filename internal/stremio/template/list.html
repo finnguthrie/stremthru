@@ -171,9 +171,18 @@
           </div>
 
           {{if $.IsAuthed}}
-          <label for="lists[{{$idx}}].name">Name</label>
-          <input type="text" id="lists[{{$idx}}].name" name="lists[{{$idx}}].name" value="{{$list.Name}}" {{if ne $list.Error.Name ""}}aria-invalid="true"{{end}} />
-          <small><span class="error">{{$list.Error.Name}}</span><span class="description"></span></small>
+          <div class="flex flex-row flex-wrap gap-4">
+            <div class="grow">
+              <label for="lists[{{$idx}}].name">Name</label>
+              <input type="text" id="lists[{{$idx}}].name" name="lists[{{$idx}}].name" value="{{$list.Name}}" {{if ne $list.Error.Name ""}}aria-invalid="true"{{end}} />
+              <small><span class="error">{{$list.Error.Name}}</span><span class="description"></span></small>
+            </div>
+            <div class="grow">
+              <label for="lists[{{$idx}}].type">Type</label>
+              <input type="text" id="lists[{{$idx}}].type" name="lists[{{$idx}}].type" value="{{$list.Type}}" {{if ne $list.Error.Type ""}}aria-invalid="true"{{end}} />
+              <small><span class="error">{{$list.Error.Type}}</span><span class="description"></span></small>
+            </div>
+          </div>
           {{end}}
 
           {{template "configure_config.html" $list.Shuffle}}

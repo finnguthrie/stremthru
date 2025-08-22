@@ -37,6 +37,7 @@ func GetManifest(r *http.Request, ud *UserData) (*stremio.Manifest, error) {
 
 	if isConfigured {
 		hasListNames := len(ud.ListNames) > 0
+		hasListTypes := len(ud.ListTypes) > 0
 
 		for idx, listId := range ud.Lists {
 			service, idStr, ok := strings.Cut(listId, ":")
@@ -68,6 +69,11 @@ func GetManifest(r *http.Request, ud *UserData) (*stremio.Manifest, error) {
 						catalog.Name = name
 					}
 				}
+				if hasListTypes {
+					if listType := ud.ListTypes[idx]; listType != "" {
+						catalog.Type = listType
+					}
+				}
 				catalogs = append(catalogs, catalog)
 
 			case "mdblist":
@@ -92,6 +98,11 @@ func GetManifest(r *http.Request, ud *UserData) (*stremio.Manifest, error) {
 				if hasListNames {
 					if name := ud.ListNames[idx]; name != "" {
 						catalog.Name = name
+					}
+				}
+				if hasListTypes {
+					if listType := ud.ListTypes[idx]; listType != "" {
+						catalog.Type = listType
 					}
 				}
 				catalogs = append(catalogs, catalog)
@@ -140,6 +151,11 @@ func GetManifest(r *http.Request, ud *UserData) (*stremio.Manifest, error) {
 						catalog.Name = name
 					}
 				}
+				if hasListTypes {
+					if listType := ud.ListTypes[idx]; listType != "" {
+						catalog.Type = listType
+					}
+				}
 				catalogs = append(catalogs, catalog)
 
 			case "trakt":
@@ -182,6 +198,11 @@ func GetManifest(r *http.Request, ud *UserData) (*stremio.Manifest, error) {
 						catalog.Name = name
 					}
 				}
+				if hasListTypes {
+					if listType := ud.ListTypes[idx]; listType != "" {
+						catalog.Type = listType
+					}
+				}
 				catalogs = append(catalogs, catalog)
 
 			case "tvdb":
@@ -207,6 +228,11 @@ func GetManifest(r *http.Request, ud *UserData) (*stremio.Manifest, error) {
 				if hasListNames {
 					if name := ud.ListNames[idx]; name != "" {
 						catalog.Name = name
+					}
+				}
+				if hasListTypes {
+					if listType := ud.ListTypes[idx]; listType != "" {
+						catalog.Type = listType
 					}
 				}
 				catalogs = append(catalogs, catalog)

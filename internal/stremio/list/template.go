@@ -66,10 +66,12 @@ type TemplateDataList struct {
 	Id      string
 	URL     string
 	Name    string
+	Type    string
 	Shuffle configure.Config
 	Error   struct {
 		URL  string
 		Name string
+		Type string
 	}
 	Disabled struct {
 		URL bool
@@ -255,12 +257,16 @@ func getTemplateData(ud *UserData, udError userDataError, isAuthed bool, r *http
 	}
 
 	hasListNames := len(ud.ListNames) > 0
+	hasListTypes := len(ud.ListTypes) > 0
 	hasListShuffle := len(ud.ListShuffle) > 0
 	for i, listId := range ud.Lists {
 		list := newTemplateDataList(i)
 		list.Id = listId
 		if hasListNames {
 			list.Name = ud.ListNames[i]
+		}
+		if hasListTypes {
+			list.Type = ud.ListTypes[i]
 		}
 		if hasListShuffle && ud.ListShuffle[i] == 1 {
 			list.Shuffle.Default = "checked"

@@ -21,6 +21,7 @@ import (
 type UserData struct {
 	Lists        []string `json:"lists"`
 	ListNames    []string `json:"list_names"`
+	ListTypes    []string `json:"list_types"`
 	ListShuffle  []int    `json:"list_shuffle"`
 	list_urls    []string `json:"-"`
 	MDBListLists []int    `json:"mdblist_lists,omitempty"` // deprecated
@@ -199,6 +200,7 @@ func getUserData(r *http.Request, isAuthed bool) (*UserData, error) {
 		ud.Lists = make([]string, 0, lists_length)
 		if isAuthed {
 			ud.ListNames = make([]string, 0, lists_length)
+			ud.ListTypes = make([]string, 0, lists_length)
 		}
 		ud.ListShuffle = make([]int, 0, lists_length)
 
@@ -218,6 +220,7 @@ func getUserData(r *http.Request, isAuthed bool) (*UserData, error) {
 			ud.Lists = append(ud.Lists, listId)
 			if isAuthed {
 				ud.ListNames = append(ud.ListNames, r.Form.Get("lists["+strconv.Itoa(i)+"].name"))
+				ud.ListTypes = append(ud.ListTypes, r.Form.Get("lists["+strconv.Itoa(i)+"].type"))
 			}
 			if r.Form.Get("lists["+strconv.Itoa(i)+"].shuffle") == "on" {
 				ud.ListShuffle = append(ud.ListShuffle, 1)
