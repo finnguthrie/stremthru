@@ -95,8 +95,8 @@ type Task struct {
 	Files         []TaskFile `json:"files"`
 	Progress      float64    `json:"progress"`
 	Status        TaskStatus `json:"status"`
-	DownloadSpeed int64      `json:"downloadSpeed"` // in bytes per second
-	UploadSpeed   int64      `json:"uploadSpeed"`   // in bytes per second
+	DownloadSpeed float64    `json:"downloadSpeed"` // in bytes per second
+	UploadSpeed   float64    `json:"uploadSpeed"`   // in bytes per second
 	ETA           int64      `json:"eta"`           // in seconds
 	AddedDate     string     `json:"addedDate"`
 	Type          string     `json:"type"` // torrent
