@@ -138,14 +138,20 @@ const (
 	ItemTypeEpisode ItemType = "episode"
 )
 
+type listItemNextEpisode struct {
+	Season  int
+	Episode int
+}
+
 type ListItem struct {
-	Rank     int            `json:"rank"`
-	Id       int64          `json:"id"`
-	ListedAt time.Time      `json:"listed_at"`
-	Note     string         `json:"note,omitempty"`
-	Type     ItemType       `json:"type"`
-	Movie    *ListItemMovie `json:"movie,omitempty"`
-	Show     *ListItemShow  `json:"show,omitempty"`
+	Rank        int                  `json:"rank"`
+	Id          int64                `json:"id"`
+	ListedAt    time.Time            `json:"listed_at"`
+	Note        string               `json:"note,omitempty"`
+	Type        ItemType             `json:"type"`
+	Movie       *ListItemMovie       `json:"movie,omitempty"`
+	Show        *ListItemShow        `json:"show,omitempty"`
+	NextEpisode *listItemNextEpisode `json:"-"`
 }
 
 type FetchListItemsData = []ListItem
@@ -341,10 +347,16 @@ var dynamicListMetaById = map[string]dynamicListMeta{
 	},
 }
 
+type EpisodeType string
+
+const (
+	EpisodeTypeStandard EpisodeType = "standard"
+)
+
 type SyncProgressUpNextNitroItemEpisode struct {
 	AvailableTranslations []string    `json:"available_translations"`
 	CommentCount          int         `json:"comment_count"`
-	EpisodeType           string      `json:"episode_type"` // standard
+	EpisodeType           EpisodeType `json:"episode_type"`
 	FirstAired            string      `json:"first_aired"`
 	Ids                   ListItemIds `json:"ids"`
 	Images                struct {
@@ -360,6 +372,18 @@ type SyncProgressUpNextNitroItemEpisode struct {
 	UpdatedAt string  `json:"updated_at"`
 	Votes     int     `json:"votes"`
 }
+
+func (ep SyncProgressUpNextNitroItemEpisode) IsAired() bool {
+	if ep.FirstAired == "" {
+		return false
+	}
+	t, err := time.Parse(time.RFC3339, ep.FirstAired)
+	if err != nil {
+		return false
+	}
+	return t.Before(time.Now())
+}
+
 type SyncProgressUpNextNitroItem struct {
 	Progress struct {
 		Aired         int                                `json:"aired"`
@@ -539,9 +563,16 @@ func (c APIClient) fetchDynamicListItems(params *fetchDynamicListItemsParams) (A
 				if _, hidden := hiddenItemIdsMap[response.data[i].ShowId]; hidden {
 					continue
 				}
-				item := ListItem{}
-				item.Type = ItemTypeShow
-				item.Show = &response.data[i].Show
+				data := &response.data[i]
+				item := ListItem{Type: ItemTypeShow}
+				item.Show = &data.Show
+				nextEpisode := data.Progress.NextEpisode
+				if nextEpisode.EpisodeType == EpisodeTypeStandard && nextEpisode.IsAired() && nextEpisode.Season != 0 && nextEpisode.Number != 0 {
+					item.NextEpisode = &listItemNextEpisode{
+						Season:  data.Progress.NextEpisode.Season,
+						Episode: data.Progress.NextEpisode.Number,
+					}
+				}
 				items = append(items, item)
 			}
 

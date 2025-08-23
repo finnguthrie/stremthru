@@ -132,9 +132,10 @@ type TraktItem struct {
 	MPARating string
 	UpdatedAt db.Timestamp
 
-	Idx    int               `json:"-"`
-	Genres db.JSONStringList `json:"-"`
-	Ids    ListItemIds       `json:"-"`
+	Idx         int                  `json:"-"`
+	Genres      db.JSONStringList    `json:"-"`
+	Ids         ListItemIds          `json:"-"`
+	NextEpisode *listItemNextEpisode `json:"-"`
 }
 
 var ItemColumn = struct {

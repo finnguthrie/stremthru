@@ -710,6 +710,12 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
+			if titem.NextEpisode != nil {
+				item.BehaviorHints = &stremio.MetaBehaviorHints{
+					DefaultVideoId: imdbId + ":" + strconv.Itoa(titem.NextEpisode.Season) + ":" + strconv.Itoa(titem.NextEpisode.Episode),
+				}
+			}
+
 			item.MetaPreview.Id = imdbId
 			if rpdbPosterBaseUrl != "" {
 				item.MetaPreview.Poster = rpdbPosterBaseUrl + imdbId + ".jpg?fallback=true"

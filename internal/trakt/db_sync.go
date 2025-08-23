@@ -156,9 +156,10 @@ func syncList(l *TraktList, tokenId string) error {
 			Rating:    int(data.Rating * 10),
 			MPARating: data.Certification,
 
-			Idx:    i,
-			Genres: data.Genres,
-			Ids:    data.Ids,
+			Idx:         i,
+			Genres:      data.Genres,
+			Ids:         data.Ids,
+			NextEpisode: item.NextEpisode,
 		}
 
 		switch lItem.Type {

@@ -177,5 +177,6 @@ type MetaPreview struct {
 	Description string        `json:"description,omitempty"`
 	Trailers    []MetaTrailer `json:"trailers,omitempty"` // warning: this will soon be deprecated in favor of `meta.trailers` being an array of `Stream`
 
-	Background string `json:"background,omitempty"` // undocumented
+	Background    string             `json:"background,omitempty"`    // undocumented
+	BehaviorHints *MetaBehaviorHints `json:"behaviorHints,omitempty"` // undocumented
 }
