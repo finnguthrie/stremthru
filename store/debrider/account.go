@@ -23,13 +23,13 @@ type GetAccountData struct {
 		RazorpaySubscriptionId string `json:"razorpay_subscription_id,omitempty"`
 		ParadiseSubId          string `json:"paradise_sub_id,omitempty"`
 		Plan                   struct {
-			Id       string `json:"id"`
-			Url      string `json:"url,omitempty"`
-			Name     string `json:"name"`
-			Price    int    `json:"price"`
-			IsFree   bool   `json:"is_free"`
-			Currency string `json:"currency"` // USD
-			Interval string `json:"interval"` // year
+			Id       string  `json:"id"`
+			Url      string  `json:"url,omitempty"`
+			Name     string  `json:"name"`
+			Price    float32 `json:"price"`
+			IsFree   bool    `json:"is_free"`
+			Currency string  `json:"currency"` // USD
+			Interval string  `json:"interval"` // year
 			Metadata struct {
 				ApiAccess                bool `json:"api_access"`
 				ConcurrentSlots          int  `json:"concurrent_slots"`
