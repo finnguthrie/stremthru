@@ -336,6 +336,7 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	catalogType := GetPathValue(r, "contentType")
 	catalogId := GetPathValue(r, "id")
 
 	service, id := parseCatalogId(catalogId)
@@ -443,9 +444,27 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		isMovieCatalog := catalogType == string(stremio.ContentTypeMovie) || catalogType == "movies"
+		isSeriesCatalog := catalogType == string(stremio.ContentTypeSeries)
 		for i := range list.Items {
 			item := &list.Items[i]
+			var itemType stremio.ContentType
+			switch item.Type {
+			case trakt.ItemTypeMovie:
+				if isSeriesCatalog {
+					continue
+				}
+				itemType = stremio.ContentTypeMovie
+			case trakt.ItemTypeShow:
+				if isMovieCatalog {
+					continue
+				}
+				itemType = stremio.ContentTypeSeries
+			default:
+				continue
+			}
 			meta := stremio.MetaPreview{
+				Type:        itemType,
 				Name:        item.Title,
 				Description: item.Overview,
 				Poster:      item.Poster,
@@ -454,14 +473,6 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 				Genres:      item.GenreNames(),
 				ReleaseInfo: strconv.Itoa(item.Year),
 				IMDBRating:  strconv.FormatFloat(float64(item.Rating)/10, 'f', 1, 32),
-			}
-			switch item.Type {
-			case trakt.ItemTypeMovie:
-				meta.Type = stremio.ContentTypeMovie
-			case trakt.ItemTypeShow:
-				meta.Type = stremio.ContentTypeSeries
-			default:
-				continue
 			}
 			if meta.Poster != "" && !strings.HasPrefix(meta.Poster, "http") {
 				meta.Poster = "https://" + meta.Poster
