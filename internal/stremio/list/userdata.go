@@ -437,7 +437,11 @@ func getUserData(r *http.Request, isAuthed bool) (*UserData, error) {
 					udErr.list_urls[idx] = "Failed to fetch List: " + err.Error()
 					continue
 				}
-				ud.Lists[idx] = "trakt:" + list.Id
+				if util.IsNumericString(list.Id) && list.UserId != "" && list.Slug != "" {
+					ud.Lists[idx] = "trakt:" + list.UserId + "." + list.Slug
+				} else {
+					ud.Lists[idx] = "trakt:" + list.Id
+				}
 
 			case "www.thetvdb.com", "thetvdb.com":
 				if !isTVDBConfigured {
@@ -624,8 +628,19 @@ func (ud *UserData) FetchTraktList(list *trakt.TraktList) error {
 	if ud.traktById == nil {
 		ud.traktById = map[string]trakt.TraktList{}
 	}
-	if list.Id != "" {
-		if l, ok := ud.traktById[list.Id]; ok {
+	if list.Id != "" && !list.IsDynamic() {
+		if userSlug, listSlug, ok := strings.Cut(list.Id, "."); ok {
+			list.Id = ""
+			list.UserId = userSlug
+			list.Slug = listSlug
+		}
+	}
+	key := list.Id
+	if !list.IsDynamic() && list.UserId != "" && list.Slug != "" {
+		key = list.UserId + "." + list.Slug
+	}
+	if key != "" {
+		if l, ok := ud.traktById[key]; ok {
 			*list = l
 			return nil
 		}
@@ -634,7 +649,7 @@ func (ud *UserData) FetchTraktList(list *trakt.TraktList) error {
 		return err
 	}
 
-	ud.traktById[list.Id] = *list
+	ud.traktById[key] = *list
 	return nil
 }
 

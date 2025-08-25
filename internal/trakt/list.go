@@ -53,23 +53,6 @@ type List struct {
 	} `json:"user"`
 }
 
-type FetchListData struct {
-	ResponseError
-	List
-}
-
-type FetchListParams struct {
-	Ctx
-	ListId int
-}
-
-func (c APIClient) FetchList(params *FetchListParams) (APIResponse[List], error) {
-	response := FetchListData{}
-	path := "/lists/" + strconv.Itoa(params.ListId)
-	res, err := c.Request("GET", path, params, &response)
-	return newAPIResponse(res, response.List), err
-}
-
 type ListItemIds struct {
 	Trakt  int    `json:"trakt"`
 	Slug   string `json:"slug"`
@@ -181,23 +164,24 @@ func (d *listResponseData[T]) UnmarshalJSON(data []byte) error {
 	return e
 }
 
-type FetchListItemsParams struct {
+type FetchUserListItemsParams struct {
 	Ctx
-	ListId   int
+	UserId   string
+	ListId   string
 	Type     []ItemType
 	SortBy   string // rank / added / title / released / runtime / popularity / random / percentage / my_rating / watched / collected
 	SortHow  string // asc / desc
 	Extended string // images / full / full,images
 }
 
-func (c APIClient) FetchListItems(params *FetchListItemsParams) (APIResponse[FetchListItemsData], error) {
+func (c APIClient) FetchUserListItems(params *FetchUserListItemsParams) (APIResponse[FetchListItemsData], error) {
 	params.Query = &url.Values{}
 	if params.Extended != "" {
 		params.Query.Set("extended", params.Extended)
 	}
 
 	response := listResponseData[ListItem]{}
-	path := "/lists/" + strconv.Itoa(params.ListId) + "/items"
+	path := "/lists/" + params.ListId + "/items"
 	if len(params.Type) > 0 {
 		path += "/" + strings.Join(params.Type, ",")
 	} else if params.SortBy != "" {
@@ -208,6 +192,9 @@ func (c APIClient) FetchListItems(params *FetchListItemsParams) (APIResponse[Fet
 		if params.SortHow != "" {
 			path += "/" + params.SortHow
 		}
+	}
+	if params.UserId != "" {
+		path = "/users/" + params.UserId + path
 	}
 	res, err := c.Request("GET", path, params, &response)
 	return newAPIResponse(res, response.data), err

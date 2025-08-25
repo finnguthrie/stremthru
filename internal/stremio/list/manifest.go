@@ -159,8 +159,8 @@ func GetManifest(r *http.Request, ud *UserData) (*stremio.Manifest, error) {
 				catalogs = append(catalogs, catalog)
 
 			case "trakt":
-				list := trakt.TraktList{Id: idStr}
-				if err := list.Fetch(ud.TraktTokenId); err != nil {
+				list := &trakt.TraktList{Id: idStr}
+				if err := ud.FetchTraktList(list); err != nil {
 					return nil, err
 				}
 				catalog := stremio.Catalog{

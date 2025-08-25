@@ -16,15 +16,12 @@ var listCache = cache.NewCache[TraktList](&cache.CacheConfig{
 	LocalCapacity: 1024,
 })
 
-var listIdBySlugCache = cache.NewCache[string](&cache.CacheConfig{
-	Lifetime:      12 * time.Hour,
-	Name:          "trakt:list-id-by-slug",
-	LocalCapacity: 2048,
-})
-
 func getListCacheKey(l *TraktList, tokenId string) string {
 	if l.IsUserSpecific() {
 		return tokenId + ":" + l.Id
+	}
+	if l.UserId != "" && l.Slug != "" {
+		return l.UserId + "." + l.Slug
 	}
 	return l.Id
 }
@@ -65,21 +62,20 @@ func syncList(l *TraktList, tokenId string) error {
 			list.User.Ids.Slug = meta.UserId
 		}
 		list.Ids.Slug = slug
-	} else if l.Id != "" {
-		log.Debug("fetching list by id", "id", l.Id)
-		listId, _ := strconv.Atoi(l.Id)
-		res, err := client.FetchList(&FetchListParams{
-			ListId: listId,
+	} else if l.UserId != "" && l.Slug != "" {
+		log.Debug("fetching list by slug", "slug", l.UserId+"/"+l.Slug)
+		res, err := client.FetchUserList(&FetchUserListParams{
+			UserId: l.UserId,
+			ListId: l.Slug,
 		})
 		if err != nil {
 			return err
 		}
 		list = &res.Data
-	} else if l.UserId != "" && l.Slug != "" {
-		log.Debug("fetching list by slug", "slug", l.UserId+"/"+l.Slug)
-		res, err := client.FetchPersonalList(&FetchPersonalListParams{
-			UserId: l.UserId,
-			ListId: l.Slug,
+	} else if l.Id != "" {
+		log.Debug("fetching list by id", "id", l.Id)
+		res, err := client.FetchUserList(&FetchUserListParams{
+			ListId: l.Id,
 		})
 		if err != nil {
 			return err
@@ -113,8 +109,9 @@ func syncList(l *TraktList, tokenId string) error {
 			id: l.Id,
 		})
 	} else {
-		res, err = client.FetchListItems(&FetchListItemsParams{
-			ListId:   list.Ids.Trakt,
+		res, err = client.FetchUserListItems(&FetchUserListItemsParams{
+			UserId:   l.UserId,
+			ListId:   l.Slug,
 			Extended: "full,images",
 		})
 	}
@@ -190,33 +187,27 @@ func syncList(l *TraktList, tokenId string) error {
 }
 
 func (l *TraktList) Fetch(tokenId string) error {
-	isMissing := false
-
-	if l.Id == "" {
-		if l.UserId == "" || l.Slug == "" {
-			return errors.New("either id, or user_id and slug must be provided")
-		}
-		listIdBySlugCacheKey := l.UserId + "/" + l.Slug
-		if !listIdBySlugCache.Get(listIdBySlugCacheKey, &l.Id) {
-			if listId, err := GetListIdBySlug(l.UserId, l.Slug); err != nil {
-				return err
-			} else if listId == "" {
-				isMissing = true
-			} else {
-				l.Id = listId
-				log.Debug("found list id by slug", "id", l.Id, "slug", l.UserId+"/"+l.Slug)
-				listIdBySlugCache.Add(listIdBySlugCacheKey, l.Id)
-			}
-		}
+	if l.Id == "" && (l.UserId == "" || l.Slug == "") {
+		return errors.New("either id, or user_id and slug must be provided")
 	}
 
-	isUserSpecific := l.IsUserSpecific()
+	isMissing := false
 
 	listCacheKey := getListCacheKey(l, tokenId)
-	if !isMissing {
-		var cachedL TraktList
-		if !listCache.Get(listCacheKey, &cachedL) {
-			if !isUserSpecific {
+	var cachedL TraktList
+	if !listCache.Get(listCacheKey, &cachedL) {
+		if !l.IsUserSpecific() {
+			if l.UserId != "" && l.Slug != "" {
+				if list, err := GetListBySlug(l.UserId, l.Slug); err != nil {
+					return err
+				} else if list == nil {
+					isMissing = true
+				} else {
+					*l = *list
+					log.Debug("found list by slug", "slug", l.UserId+"/"+l.Slug, "is_stale", l.IsStale())
+					listCache.Add(listCacheKey, *l)
+				}
+			} else {
 				if list, err := GetListById(l.Id); err != nil {
 					return err
 				} else if list == nil {
@@ -226,28 +217,25 @@ func (l *TraktList) Fetch(tokenId string) error {
 					log.Debug("found list by id", "id", l.Id, "is_stale", l.IsStale())
 					listCache.Add(listCacheKey, *l)
 				}
-			} else {
-				isMissing = true
 			}
 		} else {
-			*l = cachedL
+			isMissing = true
 		}
+	} else {
+		*l = cachedL
 	}
 
-	if !isMissing {
-		if l.IsStale() {
-			staleList := *l
-			go func() {
-				if err := syncList(&staleList, tokenId); err != nil {
-					log.Error("failed to sync stale list", "id", l.Id, "error", err)
-				}
-			}()
-		}
-		return nil
+	if isMissing {
+		return syncList(l, tokenId)
 	}
 
-	if err := syncList(l, tokenId); err != nil {
-		return err
+	if l.IsStale() {
+		staleList := *l
+		go func() {
+			if err := syncList(&staleList, tokenId); err != nil {
+				log.Error("failed to sync stale list", "id", l.Id, "error", err)
+			}
+		}()
 	}
 
 	return nil

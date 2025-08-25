@@ -29,6 +29,8 @@ type TraktList struct {
 	UpdatedAt   db.Timestamp
 
 	Items []TraktItem `json:"-"`
+
+	AlreadyPersisted bool `json:"-"`
 }
 
 const ID_PREFIX_DYNAMIC = "~:"
@@ -70,6 +72,10 @@ func (l *TraktList) IsStale() bool {
 }
 
 func (l *TraktList) ShouldPersist() bool {
+	if l.AlreadyPersisted {
+		return true
+	}
+
 	if !l.IsDynamic() {
 		return true
 	}
@@ -264,6 +270,43 @@ func GetListById(id string) (*TraktList, error) {
 		return nil, err
 	}
 	list.Items = items
+	list.AlreadyPersisted = true
+	return list, nil
+}
+
+var query_get_list_by_slug = fmt.Sprintf(
+	`SELECT %s FROM %s WHERE %s = ? AND %s = ?`,
+	db.JoinColumnNames(ListColumns...),
+	ListTableName,
+	ListColumn.UserId,
+	ListColumn.Slug,
+)
+
+func GetListBySlug(userId string, slug string) (*TraktList, error) {
+	row := db.QueryRow(query_get_list_by_slug, userId, slug)
+	list := &TraktList{}
+	if err := row.Scan(
+		&list.Id,
+		&list.UserId,
+		&list.UserName,
+		&list.Name,
+		&list.Slug,
+		&list.Description,
+		&list.Private,
+		&list.Likes,
+		&list.UpdatedAt,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	items, err := GetListItems(list.Id)
+	if err != nil {
+		return nil, err
+	}
+	list.Items = items
+	list.AlreadyPersisted = true
 	return list, nil
 }
 
