@@ -238,7 +238,7 @@ func (c *StoreClient) AddMagnet(params *store.AddMagnetParams) (*store.AddMagnet
 	if t == nil {
 		res, err := c.client.AddMagnet(&AddMagnetParams{
 			Ctx:    params.Ctx,
-			Magnet: magnet.Link,
+			Magnet: magnet.RawLink,
 			IP:     params.ClientIP,
 		})
 		if err != nil {

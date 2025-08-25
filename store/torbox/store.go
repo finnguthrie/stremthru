@@ -272,7 +272,7 @@ func (c *StoreClient) AddMagnet(params *store.AddMagnetParams) (*store.AddMagnet
 	}
 	res, err := c.client.CreateTorrent(&CreateTorrentParams{
 		Ctx:      params.Ctx,
-		Magnet:   magnet.Link,
+		Magnet:   magnet.RawLink,
 		AllowZip: false,
 	})
 	if err != nil {

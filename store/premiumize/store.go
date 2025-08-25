@@ -529,7 +529,7 @@ func (c *StoreClient) AddMagnet(params *store.AddMagnetParams) (*store.AddMagnet
 
 	ct_res, err := c.client.CreateTransfer(&CreateTransferParams{
 		Ctx:      params.Ctx,
-		Src:      magnet.Link,
+		Src:      magnet.RawLink,
 		FolderId: folder.Id,
 	})
 	if err != nil {

@@ -175,7 +175,7 @@ func (s *StoreClient) AddMagnet(params *store.AddMagnetParams) (*store.AddMagnet
 	res, err := s.client.AddFile(&AddFileParams{
 		Ctx: ctx,
 		URL: AddFileParamsURL{
-			URL: magnet.Link,
+			URL: magnet.RawLink,
 		},
 	})
 	if err != nil {

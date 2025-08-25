@@ -83,7 +83,7 @@ func (s *StoreClient) AddMagnet(params *store.AddMagnetParams) (*store.AddMagnet
 		Ctx:  params.Ctx,
 		Type: DownloadTaskTypeMagnet,
 		Data: CreateDownloadTaskParamsData{
-			MagnetLink: magnet.Link,
+			MagnetLink: magnet.RawLink,
 		},
 	})
 	if err != nil {

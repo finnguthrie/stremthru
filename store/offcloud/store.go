@@ -133,7 +133,7 @@ func (s *StoreClient) AddMagnet(params *store.AddMagnetParams) (*store.AddMagnet
 	} else {
 		res, err := s.client.AddCloudDownload(&AddCloudDownloadParams{
 			Ctx: params.Ctx,
-			URL: magnet.Link,
+			URL: magnet.RawLink,
 		})
 		if err != nil {
 			return nil, err

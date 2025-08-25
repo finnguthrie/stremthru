@@ -120,7 +120,7 @@ func (c *StoreClient) AddMagnet(params *store.AddMagnetParams) (*store.AddMagnet
 	}
 	res, err := c.client.AddSeedboxTorrent(&AddSeedboxTorrentParams{
 		Ctx:           params.Ctx,
-		Url:           magnet.Link,
+		Url:           magnet.RawLink,
 		StructureType: SeedboxTorrentStructureTypeList,
 		IP:            params.ClientIP,
 	})

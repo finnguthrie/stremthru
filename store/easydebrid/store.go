@@ -79,7 +79,7 @@ func (s *StoreClient) AddMagnet(params *store.AddMagnetParams) (*store.AddMagnet
 	}
 	res, err := s.client.LookupLinkDetails(&LookupLinkDetailsParams{
 		Ctx:  params.Ctx,
-		URLs: []string{magnet.Link},
+		URLs: []string{magnet.RawLink},
 	})
 	if err != nil {
 		return nil, err

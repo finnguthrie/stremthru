@@ -37,6 +37,7 @@ type MagnetLink struct {
 	Link     string
 	Name     string   // dn - display name
 	Trackers []string // tr - address tracker
+	RawLink  string
 }
 
 func ParseMagnetLink(value string) (MagnetLink, error) {
@@ -44,6 +45,7 @@ func ParseMagnetLink(value string) (MagnetLink, error) {
 	if !strings.HasPrefix(value, "magnet:") {
 		magnet.Hash = strings.ToLower(value)
 		magnet.Link = "magnet:?xt=urn:btih:" + magnet.Hash
+		magnet.RawLink = magnet.Link
 		return magnet, nil
 	}
 
@@ -68,6 +70,7 @@ func ParseMagnetLink(value string) (MagnetLink, error) {
 	if magnet.Name != "" {
 		magnet.Link = magnet.Link + "&dn=" + magnet.Name
 	}
+	magnet.RawLink = value
 	return magnet, nil
 }
 
