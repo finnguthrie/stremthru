@@ -8,86 +8,38 @@ import (
 	"github.com/MunifTanjim/stremthru/internal/cache"
 	"github.com/MunifTanjim/stremthru/internal/db"
 	"github.com/MunifTanjim/stremthru/internal/imdb_title"
+	meta_type "github.com/MunifTanjim/stremthru/internal/meta/type"
 )
 
-type IdType string
+type IdType = meta_type.IdType
 
 const (
-	IdTypeMovie   IdType = "movie"
-	IdTypeShow    IdType = "show"
-	IdTypeUnknown IdType = ""
+	IdTypeMovie   = meta_type.IdTypeMovie
+	IdTypeShow    = meta_type.IdTypeShow
+	IdTypeUnknown = meta_type.IdTypeUnknown
 )
 
-func (it IdType) IsValid() bool {
-	return it == IdTypeUnknown || it == IdTypeMovie || it == IdTypeShow
-}
-
-type IdMapAnime struct {
-	AniDB       string `json:"anidb,omitempty"`
-	AniList     string `json:"anilist,omitempty"`
-	AniSearch   string `json:"anisearch,omitempty"`
-	AnimePlanet string `json:"animeplanet,omitempty"`
-	Kitsu       string `json:"kitsu,omitempty"`
-	LiveChart   string `json:"livechart,omitempty"`
-	MAL         string `json:"mal,omitempty"`
-	NotifyMoe   string `json:"notifymoe,omitempty"`
-}
-
-type IdMap struct {
-	Type       IdType      `json:"type"`
-	IMDB       string      `json:"imdb,omitempty"`
-	TMDB       string      `json:"tmdb,omitempty"`
-	TVDB       string      `json:"tvdb,omitempty"`
-	TVMaze     string      `json:"tvmaze,omitempty"`
-	Trakt      string      `json:"trakt,omitempty"`
-	Letterboxd string      `json:"lboxd,omitempty"`
-	Anime      *IdMapAnime `json:"anime,omitempty"`
-}
-
-type IdProvider string
+type IdProvider = meta_type.IdProvider
 
 const (
-	IdProviderIMDB        IdProvider = "imdb"
-	IdProviderTMDB        IdProvider = ProviderTMDB
-	IdProviderTVDB        IdProvider = ProviderTVDB
-	IdProviderTVMaze      IdProvider = "tvmaze"
-	IdProviderTrakt       IdProvider = "trakt"
-	IdProviderLetterboxd  IdProvider = "lboxd"
-	IdProviderAniDB       IdProvider = "anidb"
-	IdProviderAniList     IdProvider = "anilist"
-	IdProviderAniSearch   IdProvider = "anisearch"
-	IdProviderAnimePlanet IdProvider = "animeplanet"
-	IdProviderKitsu       IdProvider = "kitsu"
-	IdProviderLiveChart   IdProvider = "livechart"
-	IdProviderMAL         IdProvider = "mal"
-	IdProviderNotifyMoe   IdProvider = "notifymoe"
+	IdProviderIMDB        = meta_type.IdProviderIMDB
+	IdProviderTMDB        = meta_type.IdProviderTMDB
+	IdProviderTVDB        = meta_type.IdProviderTVDB
+	IdProviderTVMaze      = meta_type.IdProviderTVMaze
+	IdProviderTrakt       = meta_type.IdProviderTrakt
+	IdProviderLetterboxd  = meta_type.IdProviderLetterboxd
+	IdProviderAniDB       = meta_type.IdProviderAniDB
+	IdProviderAniList     = meta_type.IdProviderAniList
+	IdProviderAniSearch   = meta_type.IdProviderAniSearch
+	IdProviderAnimePlanet = meta_type.IdProviderAnimePlanet
+	IdProviderKitsu       = meta_type.IdProviderKitsu
+	IdProviderLiveChart   = meta_type.IdProviderLiveChart
+	IdProviderMAL         = meta_type.IdProviderMAL
+	IdProviderNotifyMoe   = meta_type.IdProviderNotifyMoe
 )
 
-func (ip IdProvider) IsAnime() bool {
-	return ip == IdProviderAniDB ||
-		ip == IdProviderAniList ||
-		ip == IdProviderAniSearch ||
-		ip == IdProviderAnimePlanet ||
-		ip == IdProviderKitsu ||
-		ip == IdProviderLiveChart ||
-		ip == IdProviderMAL ||
-		ip == IdProviderNotifyMoe
-}
-
-func getCacheKey(idProvider IdProvider, idType IdType, id string) string {
-	switch idProvider {
-	case IdProviderIMDB:
-		return id
-	case IdProviderTVDB:
-		return string(idProvider) + ":" + string(idType) + ":" + id
-	default:
-		panic("unsupported id provider: " + string(idProvider))
-	}
-}
-
-func (ip IdProvider) GetCacheKey(idMap IdMap) string {
-	return getCacheKey(ip, idMap.Type, idMap.IMDB)
-}
+type IdMapAnime = meta_type.IdMapAnime
+type IdMap = meta_type.IdMap
 
 func ParseId(idStr string) (provider IdProvider, id string) {
 	if strings.HasPrefix(idStr, "tt") {
@@ -113,7 +65,7 @@ func GetIdMap(idType IdType, idStr string) (*IdMap, error) {
 
 	idMap := IdMap{IMDB: id}
 
-	cacheKey := getCacheKey(idProvider, idType, id)
+	cacheKey := meta_type.GetIdProviderCacheKey(idProvider, idType, id)
 	if !idMapCache.Get(cacheKey, &idMap) {
 		switch idProvider {
 		case IdProviderIMDB:

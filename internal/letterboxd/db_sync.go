@@ -8,7 +8,15 @@ import (
 	"github.com/MunifTanjim/stremthru/internal/cache"
 	"github.com/MunifTanjim/stremthru/internal/config"
 	"github.com/MunifTanjim/stremthru/internal/db"
+	"github.com/MunifTanjim/stremthru/internal/peer"
 )
+
+var LetterboxdEnabled = config.Integration.Letterboxd.IsEnabled()
+var HasPeer = config.HasPeer
+
+var Peer = peer.NewAPIClient(&peer.APIClientConfig{
+	BaseURL: config.PeerURL,
+})
 
 var listCache = cache.NewCache[LetterboxdList](&cache.CacheConfig{
 	Lifetime:      6 * time.Hour,
@@ -52,6 +60,57 @@ func syncList(l *LetterboxdList) error {
 			return err
 		}
 		l.Id = listId
+	}
+
+	if !LetterboxdEnabled {
+		if !HasPeer {
+			return errors.New("letterboxd integration is not available")
+		}
+
+		log.Debug("fetching list by id from upstream", "id", l.Id)
+		res, err := Peer.FetchLetterboxdList(&peer.FetchLetterboxdListParams{
+			ListId: l.Id,
+		})
+		if err != nil {
+			return err
+		}
+
+		list := &res.Data
+
+		l.UserId = list.UserId
+		l.UserName = list.UserSlug
+		l.Name = list.Title
+		l.Slug = list.Slug
+		l.Description = list.Description
+		l.Private = list.IsPrivate
+		l.Items = nil
+		for i := range list.Items {
+			item := &list.Items[i]
+			l.Items = append(l.Items, LetterboxdItem{
+				Id:          item.Id,
+				Name:        item.Title,
+				ReleaseYear: item.Year,
+				Runtime:     item.Runtime,
+				Rating:      item.Rating,
+				Adult:       item.IsAdult,
+				Poster:      item.Poster,
+				UpdatedAt:   db.Timestamp{Time: item.UpdatedAt},
+
+				GenreIds: item.GenreIds,
+				IdMap:    &item.IdMap,
+				Rank:     item.Index,
+			})
+		}
+
+		if err := UpsertList(l); err != nil {
+			return err
+		}
+
+		if err := listCache.Add(getListCacheKey(l), *l); err != nil {
+			return err
+		}
+
+		return nil
 	}
 
 	log.Debug("fetching list by id", "id", l.Id)

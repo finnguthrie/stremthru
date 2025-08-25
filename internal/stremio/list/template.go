@@ -27,7 +27,7 @@ var TraktEnabled = config.Integration.Trakt.IsEnabled()
 var AnimeEnabled = config.Feature.IsEnabled("anime")
 var TMDBEnabled = config.Integration.TMDB.IsEnabled()
 var TVDBEnabled = config.Integration.TVDB.IsEnabled()
-var LetterboxdEnabled = config.Integration.Letterboxd.IsEnabled()
+var LetterboxdEnabled = config.Integration.Letterboxd.IsEnabled() || config.HasPeer
 
 func GetMetaIdMovieOptions(ud *UserData) []configure.ConfigOption {
 	metaIdMovieOptions := []configure.ConfigOption{

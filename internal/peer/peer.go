@@ -9,6 +9,7 @@ import (
 
 	"github.com/MunifTanjim/stremthru/core"
 	"github.com/MunifTanjim/stremthru/internal/config"
+	meta_type "github.com/MunifTanjim/stremthru/internal/meta/type"
 	"github.com/MunifTanjim/stremthru/internal/request"
 	"github.com/MunifTanjim/stremthru/internal/server"
 	"github.com/MunifTanjim/stremthru/internal/torrent_info"
@@ -265,5 +266,16 @@ func (c APIClient) PushTorrents(params *PushTorrentsParams) (request.APIResponse
 
 	response := &Response[PushTorrentsData]{}
 	res, err := c.Request("POST", "/v0/torrents", params, response)
+	return request.NewAPIResponse(res, response.Data), err
+}
+
+type FetchLetterboxdListParams struct {
+	request.Ctx
+	ListId string
+}
+
+func (c APIClient) FetchLetterboxdList(params *FetchLetterboxdListParams) (request.APIResponse[meta_type.List], error) {
+	response := &Response[meta_type.List]{}
+	res, err := c.Request("GET", "/v0/meta/lists/letterboxd/"+params.ListId, params, response)
 	return request.NewAPIResponse(res, response.Data), err
 }

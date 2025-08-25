@@ -64,7 +64,9 @@ type response struct {
 func (res response) send(w http.ResponseWriter, r *http.Request, statusCode int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	if err := json.NewEncoder(w).Encode(res); err != nil {
+	encoder := json.NewEncoder(w)
+	encoder.SetEscapeHTML(false)
+	if err := encoder.Encode(res); err != nil {
 		core.LogError(r, "failed to encode json", err)
 	}
 }
