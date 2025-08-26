@@ -34,7 +34,7 @@ func (l *LetterboxdList) IsStale() bool {
 }
 
 func (l *LetterboxdList) GetURL() string {
-	return SITE_BASE_URL + "/" + l.UserName + "/list/" + l.Slug
+	return SITE_BASE_URL + "/" + strings.ToLower(l.UserName) + "/list/" + l.Slug
 }
 
 var ListColumn = struct {

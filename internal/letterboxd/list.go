@@ -296,7 +296,7 @@ func (l List) getLetterboxdSlug() string {
 	if err != nil {
 		return ""
 	}
-	return strings.TrimSuffix(strings.TrimPrefix(u.Path, "/"+l.Owner.Username+"/list/"), "/")
+	return strings.TrimSuffix(strings.TrimPrefix(u.Path, "/"+strings.ToLower(l.Owner.Username)+"/list/"), "/")
 }
 
 type fetchListData struct {
