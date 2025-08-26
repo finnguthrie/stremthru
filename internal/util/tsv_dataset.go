@@ -42,7 +42,6 @@ func NewTSVDataset[T any](conf *TSVDatasetConfig[T]) *TSVDataset[T] {
 func (ds TSVDataset[T]) newReader(file *os.File) *csv.Reader {
 	r := csv.NewReader(file)
 	r.Comma = '\t'
-	r.LazyQuotes = true
 	r.ReuseRecord = true
 	if ds.has_headers {
 		headers := ds.nextRow(r)
