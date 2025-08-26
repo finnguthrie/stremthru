@@ -166,8 +166,3 @@ func (c APIClient) Request(method, path string, params request.Context, v reques
 	}
 	return res, nil
 }
-
-func Test() {
-	res, err := client.Request("GET", "/v0/films/genres", nil, &ResponseError{})
-	log.Debug("X", "res", res, "err", err)
-}
