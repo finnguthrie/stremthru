@@ -477,7 +477,14 @@ func RecordMappingFromMDBList(tx *db.Tx, imdbId, tmdbId, tvdbId, traktId, malId 
 		db.CurrentTimestamp,
 	)
 
-	_, err := tx.Exec(query, imdbId, tmdbId, tvdbId, traktId, malId)
+	_, err := tx.Exec(
+		query,
+		imdbId,
+		normalizeOptionalId(tmdbId),
+		normalizeOptionalId(tvdbId),
+		normalizeOptionalId(traktId),
+		normalizeOptionalId(malId),
+	)
 	return err
 }
 
