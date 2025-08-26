@@ -85,8 +85,8 @@ func GetIMDBIdByLetterboxdId(letterboxdIds []string) (map[string]string, error) 
 }
 
 var query_get_imdb_id_by_trakt_id = fmt.Sprintf(
-	`SELECT it.%s, it.%s, itm.%s FROM %s itm JOIN %s it ON it.%s = itm.%s WHERE `,
-	Column.TId,
+	`SELECT itm.%s, coalesce(it.%s, '') AS item_type, itm.%s FROM %s itm LEFT JOIN %s it ON it.%s = itm.%s WHERE `,
+	MapColumn.IMDBId,
 	Column.Type,
 	MapColumn.TraktId,
 	MapTableName,
@@ -95,8 +95,7 @@ var query_get_imdb_id_by_trakt_id = fmt.Sprintf(
 	MapColumn.IMDBId,
 )
 var query_get_imdb_id_by_trakt_id_cond_movie = fmt.Sprintf(
-	` it.%s IN (%s) AND itm.%s IN `,
-	Column.Type,
+	` item_type IN (%s,'') AND itm.%s IN `,
 	fmt.Sprintf(
 		util.RepeatJoin("'%s'", len(movieTypes), ","),
 		movieTypes[0],
@@ -105,8 +104,7 @@ var query_get_imdb_id_by_trakt_id_cond_movie = fmt.Sprintf(
 	MapColumn.TraktId,
 )
 var query_get_imdb_id_by_trakt_id_cond_show = fmt.Sprintf(
-	` it.%s IN (%s) AND itm.%s IN `,
-	Column.Type,
+	` item_type IN (%s) AND itm.%s IN `,
 	fmt.Sprintf(
 		util.RepeatJoin("'%s'", len(showTypes), ","),
 		showTypes[0],
@@ -183,8 +181,8 @@ func GetIMDBIdByTraktId(traktMovieIds, traktShowIds []string) (map[string]string
 }
 
 var query_get_imdb_id_by_tmdb_id = fmt.Sprintf(
-	`SELECT it.%s, it.%s, itm.%s FROM %s itm JOIN %s it ON it.%s = itm.%s WHERE `,
-	Column.TId,
+	`SELECT itm.%s, coalesce(it.%s, '') AS item_type, itm.%s FROM %s itm LEFT JOIN %s it ON it.%s = itm.%s WHERE `,
+	MapColumn.IMDBId,
 	Column.Type,
 	MapColumn.TMDBId,
 	MapTableName,
@@ -193,8 +191,7 @@ var query_get_imdb_id_by_tmdb_id = fmt.Sprintf(
 	MapColumn.IMDBId,
 )
 var query_get_imdb_id_by_tmdb_id_cond_movie = fmt.Sprintf(
-	` it.%s IN (%s) AND itm.%s IN `,
-	Column.Type,
+	` item_type IN (%s,'') AND itm.%s IN `,
 	fmt.Sprintf(
 		util.RepeatJoin("'%s'", len(movieTypes), ","),
 		movieTypes[0],
@@ -203,8 +200,7 @@ var query_get_imdb_id_by_tmdb_id_cond_movie = fmt.Sprintf(
 	MapColumn.TMDBId,
 )
 var query_get_imdb_id_by_tmdb_id_cond_show = fmt.Sprintf(
-	` it.%s IN (%s) AND itm.%s IN `,
-	Column.Type,
+	` item_type IN (%s) AND itm.%s IN `,
 	fmt.Sprintf(
 		util.RepeatJoin("'%s'", len(showTypes), ","),
 		showTypes[0],
