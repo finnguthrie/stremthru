@@ -1,8 +1,9 @@
-package meta_list
+package meta_letterboxd
 
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/MunifTanjim/stremthru/internal/imdb_title"
 	"github.com/MunifTanjim/stremthru/internal/letterboxd"

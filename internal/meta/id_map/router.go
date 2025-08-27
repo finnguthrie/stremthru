@@ -1,4 +1,4 @@
-package meta
+package meta_id_map
 
 import (
 	"errors"
@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/MunifTanjim/stremthru/internal/meta"
 	"github.com/MunifTanjim/stremthru/internal/server"
 	"github.com/MunifTanjim/stremthru/internal/shared"
 )
@@ -20,17 +21,17 @@ func handleIdMap(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	idType := IdType(r.PathValue("idType"))
+	idType := meta.IdType(r.PathValue("idType"))
 	if !idType.IsValid() {
 		shared.ErrorBadRequest(r, "invalid idType").Send(w, r)
 		return
 	}
 	id := r.PathValue("id")
 
-	idMap, err := GetIdMap(idType, id)
+	idMap, err := meta.GetIdMap(idType, id)
 	if err != nil {
-		if errors.Is(err, ErrorUnsupportedId) {
-			shared.ErrorBadRequest(r, ErrorUnsupportedId.Error()).Send(w, r)
+		if errors.Is(err, meta.ErrorUnsupportedId) {
+			shared.ErrorBadRequest(r, meta.ErrorUnsupportedId.Error()).Send(w, r)
 			return
 		}
 		shared.ErrorInternalServerError(r, "").WithCause(err).Send(w, r)
@@ -54,5 +55,5 @@ func AddEndpoints(mux *http.ServeMux) {
 
 	router.HandleFunc("/id-map/{idType}/{id}", handleIdMap)
 
-	mux.Handle("/v0/meta/", http.StripPrefix("/v0/meta", commonMiddleware(router)))
+	mux.Handle("/v0/meta/id-map/", http.StripPrefix("/v0/meta", commonMiddleware(router)))
 }

@@ -1,4 +1,4 @@
-package meta_list
+package meta_letterboxd
 
 import (
 	"net/http"
@@ -21,11 +21,15 @@ func commonMiddleware(next http.Handler) http.Handler {
 }
 
 func AddEndpoints(mux *http.ServeMux) {
-	router := http.NewServeMux()
-
-	if config.Integration.Letterboxd.IsEnabled() {
-		router.HandleFunc("/letterboxd/{list_id}", handleGetLetterboxdListById)
+	if !config.Integration.Letterboxd.IsEnabled() {
+		return
 	}
 
-	mux.Handle("/v0/meta/lists/", http.StripPrefix("/v0/meta/lists", commonMiddleware(router)))
+	mux.HandleFunc("/v0/meta/lists/letterboxd/{list_id}", handleGetLetterboxdListById)
+
+	router := http.NewServeMux()
+
+	router.HandleFunc("/lists/{list_id}", handleGetLetterboxdListById)
+
+	mux.Handle("/v0/meta/letterboxd/", http.StripPrefix("/v0/meta/letterboxd", commonMiddleware(router)))
 }
