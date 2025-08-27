@@ -105,7 +105,7 @@ func parseIntegration() IntegrationConfig {
 		Letterboxd: integrationConfigLettterboxd{
 			APIKey:        getEnv("STREMTHRU_INTEGRATION_LETTERBOXD_API_KEY"),
 			Secret:        getEnv("STREMTHRU_INTEGRATION_LETTERBOXD_SECRET"),
-			ListStaleTime: mustParseDuration("letterboxd list stale time", getEnv("STREMTHRU_INTEGRATION_LETTERBOXD_LIST_STALE_TIME"), 15*time.Minute),
+			ListStaleTime: mustParseDuration("letterboxd list stale time", getEnv("STREMTHRU_INTEGRATION_LETTERBOXD_LIST_STALE_TIME"), 2*24*time.Hour),
 		},
 		MDBList: integrationConfigMDBList{
 			ListStaleTime: mustParseDuration("mdblist list stale time", getEnv("STREMTHRU_INTEGRATION_MDBLIST_LIST_STALE_TIME"), 15*time.Minute),
