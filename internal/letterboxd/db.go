@@ -24,6 +24,7 @@ type LetterboxdList struct {
 	Slug        string
 	Description string
 	Private     bool
+	ItemCount   int
 	UpdatedAt   db.Timestamp
 
 	Items []LetterboxdItem `json:"-"`
@@ -33,8 +34,20 @@ func (l *LetterboxdList) IsStale() bool {
 	return time.Now().After(l.UpdatedAt.Add(config.Integration.Letterboxd.ListStaleTime + util.GetRandomDuration(5*time.Second, 5*time.Minute)))
 }
 
+func (l *LetterboxdList) StaleIn() time.Duration {
+	if l.HasUnfetchedItems() {
+		return 15 * time.Minute
+	}
+	return time.Until(l.UpdatedAt.Time.Add(config.Integration.Letterboxd.ListStaleTime))
+}
+
 func (l *LetterboxdList) GetURL() string {
 	return SITE_BASE_URL + "/" + strings.ToLower(l.UserName) + "/list/" + l.Slug
+}
+
+func (l *LetterboxdList) HasUnfetchedItems() bool {
+	fetchedItemCount := len(l.Items)
+	return l.ItemCount > fetchedItemCount && fetchedItemCount < MAX_LIST_ITEM_COUNT
 }
 
 var ListColumn = struct {
@@ -45,6 +58,7 @@ var ListColumn = struct {
 	Slug        string
 	Description string
 	Private     string
+	ItemCount   string
 	UpdatedAt   string
 }{
 	Id:          "id",
@@ -54,6 +68,7 @@ var ListColumn = struct {
 	Slug:        "slug",
 	Description: "description",
 	Private:     "private",
+	ItemCount:   "item_count",
 	UpdatedAt:   "uat",
 }
 
@@ -65,6 +80,7 @@ var ListColumns = []string{
 	ListColumn.Slug,
 	ListColumn.Description,
 	ListColumn.Private,
+	ListColumn.ItemCount,
 	ListColumn.UpdatedAt,
 }
 
@@ -197,6 +213,7 @@ func GetListById(id string) (*LetterboxdList, error) {
 		&list.Slug,
 		&list.Description,
 		&list.Private,
+		&list.ItemCount,
 		&list.UpdatedAt,
 	); err != nil {
 		if err == sql.ErrNoRows {
@@ -274,6 +291,7 @@ var query_upsert_list = fmt.Sprintf(
 		fmt.Sprintf(`%s = EXCLUDED.%s`, ListColumn.Slug, ListColumn.Slug),
 		fmt.Sprintf(`%s = EXCLUDED.%s`, ListColumn.Description, ListColumn.Description),
 		fmt.Sprintf(`%s = EXCLUDED.%s`, ListColumn.Private, ListColumn.Private),
+		fmt.Sprintf(`%s = EXCLUDED.%s`, ListColumn.ItemCount, ListColumn.ItemCount),
 		fmt.Sprintf(`%s = %s`, ListColumn.UpdatedAt, db.CurrentTimestamp),
 	}, ", "),
 )
@@ -301,6 +319,7 @@ func UpsertList(list *LetterboxdList) (err error) {
 		list.Slug,
 		list.Description,
 		list.Private,
+		list.ItemCount,
 	)
 	if err != nil {
 		return err

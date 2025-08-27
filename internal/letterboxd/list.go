@@ -256,7 +256,7 @@ type List struct {
 	Id                  string             `json:"id"`
 	Name                string             `json:"name"`
 	Version             int64              `json:"version,omitempty"`
-	FilmCount           int32              `json:"filmCount"`
+	FilmCount           int                `json:"filmCount"`
 	Published           bool               `json:"published"`
 	Ranked              bool               `json:"ranked"`
 	HasEntriesWithNotes bool               `json:"hasEntriesWithNotes"`
@@ -328,8 +328,8 @@ type ListEntry struct {
 }
 
 type FilmsMetadata struct {
-	TotalFilmCount    int32 `json:"totalFilmCount"`
-	FilteredFilmCount int32 `json:"filteredFilmCount"`
+	TotalFilmCount    int `json:"totalFilmCount"`
+	FilteredFilmCount int `json:"filteredFilmCount"`
 }
 
 type FilmsRelationshipCounts struct {
@@ -350,7 +350,7 @@ type ListEntriesResponse struct {
 	ResponseError
 	Next          string                    `json:"next,omitempty"`
 	Items         []ListEntry               `json:"items"`
-	ItemCount     int32                     `json:"itemCount"`
+	ItemCount     int                       `json:"itemCount"`
 	Metadata      FilmsMetadata             `json:"metadata"`
 	Relationships []FilmsMemberRelationship `json:"relationships"`
 }

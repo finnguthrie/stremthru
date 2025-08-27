@@ -567,6 +567,20 @@ func InitWorkers() func() {
 		workers = append(workers, worker)
 	}
 
+	if worker := InitSyncLetterboxdList(&WorkerConfig{
+		Disabled:     worker_queue.LetterboxdListSyncerQueue.Disabled,
+		Interval:     5 * time.Minute,
+		Name:         "sync-letterboxd-list",
+		OnEnd:        func() {},
+		OnStart:      func() {},
+		RunExclusive: true,
+		ShouldWait: func() (bool, string) {
+			return false, ""
+		},
+	}); worker != nil {
+		workers = append(workers, worker)
+	}
+
 	return func() {
 		for _, worker := range workers {
 			worker.scheduler.Stop()

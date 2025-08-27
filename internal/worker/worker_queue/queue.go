@@ -1,6 +1,7 @@
 package worker_queue
 
 import (
+	"errors"
 	"sync"
 	"time"
 )
@@ -18,6 +19,8 @@ type WorkerQueue[T any] struct {
 	debounceTime time.Duration
 	Disabled     bool
 }
+
+var ErrWorkerQueueItemDelayed = errors.New("worker queue item delayed")
 
 func (q *WorkerQueue[T]) Queue(item T) {
 	if q.Disabled {
@@ -40,7 +43,11 @@ func (q *WorkerQueue[T]) Process(f func(item T) error) {
 		val, valOk := v.(WorkerQueueItem[T])
 		if keyOk && valOk && val.t.Before(time.Now()) {
 			if err := f(val.v); err != nil {
-				log.Error("WorkerQueue process failed", "error", err, "key", q.getKey(val.v))
+				if err == ErrWorkerQueueItemDelayed {
+					log.Debug("WorkerQueue process delayed", "key", q.getKey(val.v))
+				} else {
+					log.Error("WorkerQueue process failed", "error", err, "key", q.getKey(val.v))
+				}
 			} else {
 				q.delete(val.v)
 			}
@@ -65,7 +72,11 @@ func (q *WorkerQueue[T]) ProcessGroup(f func(groupKey string, items []T) error) 
 	})
 	for groupKey, items := range byGroupKey {
 		if err := f(groupKey, items); err != nil {
-			log.Error("WorkerQueue processGroup failed", "error", err, "group_key", groupKey)
+			if err == ErrWorkerQueueItemDelayed {
+				log.Debug("WorkerQueue processGroup delayed", "group_key", groupKey)
+			} else {
+				log.Error("WorkerQueue processGroup failed", "error", err, "group_key", groupKey)
+			}
 		} else {
 			for i := range items {
 				q.delete(items[i])

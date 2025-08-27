@@ -9,7 +9,10 @@ import (
 	"github.com/MunifTanjim/stremthru/internal/config"
 	"github.com/MunifTanjim/stremthru/internal/db"
 	"github.com/MunifTanjim/stremthru/internal/peer"
+	"github.com/MunifTanjim/stremthru/internal/worker/worker_queue"
 )
+
+const MAX_LIST_ITEM_COUNT = 5000
 
 var LetterboxdEnabled = config.Integration.Letterboxd.IsEnabled()
 var HasPeer = config.HasPeer
@@ -34,9 +37,13 @@ func getListCacheKey(l *LetterboxdList) string {
 	return l.Id
 }
 
+func InvalidateListCache(list *LetterboxdList) {
+	listCache.Remove(getListCacheKey(list))
+}
+
 var syncListMutex sync.Mutex
 
-var client = NewAPIClient(&APIClientConfig{
+var Client = NewAPIClient(&APIClientConfig{
 	apiKey: config.Integration.Letterboxd.APIKey,
 	secret: config.Integration.Letterboxd.Secret,
 })
@@ -53,10 +60,11 @@ func syncList(l *LetterboxdList) error {
 		}
 
 		log.Debug("fetching list id by slug", "slug", l.UserName+"/"+l.Slug)
-		listId, err := client.FetchListID(&FetchListIDParams{
+		listId, err := Client.FetchListID(&FetchListIDParams{
 			ListURL: SITE_BASE_URL + "/" + l.UserName + "/list/" + l.Slug + "/",
 		})
 		if err != nil {
+			log.Error("failed to fetch list id by slug", "error", err, "slug", l.UserName+"/"+l.Slug)
 			return err
 		}
 		l.Id = listId
@@ -83,6 +91,7 @@ func syncList(l *LetterboxdList) error {
 		l.Slug = list.Slug
 		l.Description = list.Description
 		l.Private = list.IsPrivate
+		l.ItemCount = list.ItemCount
 		l.Items = nil
 		for i := range list.Items {
 			item := &list.Items[i]
@@ -106,15 +115,21 @@ func syncList(l *LetterboxdList) error {
 			return err
 		}
 
-		if err := listCache.Add(getListCacheKey(l), *l); err != nil {
-			return err
+		if l.HasUnfetchedItems() {
+			if err := listCache.AddWithLifetime(getListCacheKey(l), *l, l.StaleIn()); err != nil {
+				return err
+			}
+		} else {
+			if err := listCache.Add(getListCacheKey(l), *l); err != nil {
+				return err
+			}
 		}
 
 		return nil
 	}
 
 	log.Debug("fetching list by id", "id", l.Id)
-	res, err := client.FetchList(&FetchListParams{
+	res, err := Client.FetchList(&FetchListParams{
 		Id: l.Id,
 	})
 	if err != nil {
@@ -130,19 +145,24 @@ func syncList(l *LetterboxdList) error {
 	}
 	l.Description = list.Description
 	l.Private = false // list.SharePolicy != SharePolicyAnyone
+	l.ItemCount = list.FilmCount
 	l.Items = nil
 
-	log.Debug("fetching list items", "id", l.Id)
 	hasMore := true
 	perPage := 100
+	page := 0
 	cursor := ""
-	for hasMore {
-		res, err := client.FetchListEntries(&FetchListEntriesParams{
+	max_page := 2
+	for hasMore && page < max_page {
+		page++
+		log.Debug("fetching list items", "id", l.Id, "page", page)
+		res, err := Client.FetchListEntries(&FetchListEntriesParams{
 			Id:      l.Id,
 			Cursor:  cursor,
 			PerPage: perPage,
 		})
 		if err != nil {
+			log.Error("failed to fetch list items", "id", l.Id, "error", err)
 			return err
 		}
 		now := time.Now()
@@ -169,6 +189,7 @@ func syncList(l *LetterboxdList) error {
 		}
 		cursor = res.Data.Next
 		hasMore = cursor != "" && len(res.Data.Items) == perPage
+		time.Sleep(2 * time.Second)
 	}
 
 	if err := UpsertList(l); err != nil {
@@ -177,6 +198,13 @@ func syncList(l *LetterboxdList) error {
 
 	if err := listCache.Add(getListCacheKey(l), *l); err != nil {
 		return err
+	}
+
+	if l.HasUnfetchedItems() {
+		log.Info("list is not fully synced, queuing for sync", "id", l.Id, "item_count", l.ItemCount, "fetched_item_count", len(l.Items))
+		worker_queue.LetterboxdListSyncerQueue.Queue(worker_queue.LetterboxdListSyncerQueueItem{
+			ListId: l.Id,
+		})
 	}
 
 	return nil
@@ -225,13 +253,11 @@ func (l *LetterboxdList) Fetch() error {
 		return syncList(l)
 	}
 
-	if l.IsStale() {
-		staleList := *l
-		go func() {
-			if err := syncList(&staleList); err != nil {
-				log.Error("failed to sync stale list", "id", l.Id, "error", err)
-			}
-		}()
+	if l.IsStale() || l.HasUnfetchedItems() {
+		log.Info("queueing list for sync", "id", l.Id, "item_count", l.ItemCount, "fetched_item_count", len(l.Items))
+		worker_queue.LetterboxdListSyncerQueue.Queue(worker_queue.LetterboxdListSyncerQueueItem{
+			ListId: l.Id,
+		})
 	}
 
 	return nil

@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/MunifTanjim/stremthru/core"
@@ -33,8 +34,9 @@ type APIClient struct {
 	apiKey     string
 	secret     string
 
-	reqQuery  func(query *url.Values, params request.Context)
-	reqHeader func(query *http.Header, params request.Context)
+	reqQuery   func(query *url.Values, params request.Context)
+	reqHeader  func(query *http.Header, params request.Context)
+	retryAfter time.Duration
 }
 
 func NewAPIClient(conf *APIClientConfig) *APIClient {
@@ -87,6 +89,13 @@ func (r *ResponseError) Unmarshal(res *http.Response, body []byte, v any) error 
 	switch {
 	case strings.Contains(contentType, "application/json"):
 		return core.UnmarshalJSON(res.StatusCode, body, v)
+	case strings.Contains(contentType, "text/plain") && res.StatusCode >= 400:
+		r.Err = true
+		r.Message = string(body)
+		if code, ok := strings.CutPrefix(r.Message, "error code: "); ok {
+			r.Code = code
+		}
+		return r
 	default:
 		return errors.New("unexpected content type: " + contentType)
 	}
@@ -138,7 +147,16 @@ func (c APIClient) beforeRequest(req *http.Request) error {
 	return nil
 }
 
+func (c APIClient) GetRetryAfter() time.Duration {
+	return c.retryAfter
+}
+
+var requestMutex sync.Mutex
+
 func (c APIClient) Request(method, path string, params request.Context, v request.ResponseContainer) (*http.Response, error) {
+	requestMutex.Lock()
+	defer requestMutex.Unlock()
+
 	if params == nil {
 		params = &Ctx{}
 	}
@@ -148,10 +166,15 @@ func (c APIClient) Request(method, path string, params request.Context, v reques
 		error.Cause = err
 		return nil, error
 	}
+	c.retryAfter = 0
 	params.BeforeDo(c.beforeRequest)
 	res, err := params.DoRequest(c.httpClient, req)
 	err = request.ProcessResponseBody(res, err, v)
 	if err != nil {
+		if res.StatusCode == http.StatusTooManyRequests {
+			retryAfter := res.Header.Get("Retry-After")
+			c.retryAfter = time.Duration(util.SafeParseInt(retryAfter, 30)) * time.Second
+		}
 		error := core.NewUpstreamError("")
 		if rerr, ok := err.(*core.Error); ok {
 			error.Msg = rerr.Msg

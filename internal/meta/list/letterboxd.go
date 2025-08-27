@@ -2,6 +2,7 @@ package meta_list
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/MunifTanjim/stremthru/internal/imdb_title"
 	"github.com/MunifTanjim/stremthru/internal/letterboxd"
@@ -32,6 +33,7 @@ func handleGetLetterboxdListById(w http.ResponseWriter, r *http.Request) {
 		ItemType:    meta_type.ItemTypeMovie,
 		IsPrivate:   l.Private,
 		IsPersonal:  false,
+		ItemCount:   l.ItemCount,
 		UpdatedAt:   l.UpdatedAt.Time,
 		Items:       []meta_type.ListItem{},
 	}
@@ -82,6 +84,9 @@ func handleGetLetterboxdListById(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+
+	cacheMaxAge := strconv.FormatInt(int64(l.StaleIn().Seconds()), 10)
+	w.Header().Add("Cache-Control", "max-age="+cacheMaxAge+"")
 
 	SendResponse(w, r, 200, list, nil)
 }

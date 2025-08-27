@@ -23,6 +23,7 @@ type List struct {
 	ItemType    ItemType  `json:"item_type"`
 	IsPrivate   bool      `json:"is_private"`
 	IsPersonal  bool      `json:"is_personal"`
+	ItemCount   int       `json:"item_count"`
 	UpdatedAt   time.Time `json:"updated_at"`
 
 	Items []ListItem `json:"items"`
