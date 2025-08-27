@@ -86,8 +86,8 @@ func handleGetLetterboxdListById(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	cacheMaxAge := strconv.FormatInt(int64(l.StaleIn().Seconds()), 10)
-	w.Header().Add("Cache-Control", "max-age="+cacheMaxAge+"")
+	cacheMaxAge := min(int64(l.StaleIn().Seconds()), int64(2*time.Hour.Seconds()))
+	w.Header().Add("Cache-Control", "public, max-age="+strconv.FormatInt(cacheMaxAge, 10))
 
 	SendResponse(w, r, 200, list, nil)
 }

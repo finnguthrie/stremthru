@@ -17,6 +17,7 @@ func handleTorznab(w http.ResponseWriter, r *http.Request) {
 
 	switch t {
 	case "caps":
+		w.Header().Set("Cache-Control", "public, max-age=7200")
 		shared.SendXML(w, r, 200, torznab.StremThruIndexer.Capabilities())
 	case "search", "tvsearch", "movie":
 		query, err := torznab.ParseQuery(r.URL.Query())
@@ -29,11 +30,13 @@ func handleTorznab(w http.ResponseWriter, r *http.Request) {
 			shared.SendXML(w, r, 200, torznab.ErrorUnknownError(err.Error()))
 			return
 		}
+		w.Header().Set("Cache-Control", "public, max-age=7200")
 		shared.SendXML(w, r, 200, torznab.ResultFeed{
 			Info:  torznab.StremThruIndexer.Info(),
 			Items: items,
 		})
 	default:
+		w.Header().Set("Cache-Control", "public, max-age=7200")
 		shared.SendXML(w, r, 200, torznab.ErrorIncorrectParameter(t))
 	}
 }

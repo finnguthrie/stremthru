@@ -60,7 +60,11 @@ func handleListTorrents(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set(server.HEADER_ORIGIN_INSTANCE_ID, config.InstanceId)
 	}
 
-	data, err := buddy.ListTorrentsByStremId(sid, query.Get("local_only") != "", originInstanceId, query.Get("no_missing_size") != "")
+	localOnly := query.Get("local_only") != ""
+	noMissingSize := query.Get("no_missing_size") != ""
+	data, err := buddy.ListTorrentsByStremId(sid, localOnly, originInstanceId, noMissingSize)
+
+	w.Header().Set("Cache-Control", "public, max-age=7200")
 	SendResponse(w, r, 200, data, err)
 }
 

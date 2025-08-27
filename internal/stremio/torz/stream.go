@@ -348,6 +348,10 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 		idx++
 	}
 
+	if isP2P && !torzLazyPull {
+		w.Header().Set("Cache-Control", "public, max-age=7200")
+	}
+
 	SendResponse(w, r, 200, &stremio.StreamHandlerResponse{
 		Streams: streams,
 	})
