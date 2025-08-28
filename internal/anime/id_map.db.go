@@ -315,6 +315,7 @@ var query_get_anidb_id_by_kitsu_id = fmt.Sprintf(
 	IdMapColumn.Kitsu,
 )
 
+// TODO: add cache
 func GetAniDBIdByKitsuId(kitsuId string) (anidbId, season string, err error) {
 	query := query_get_anidb_id_by_kitsu_id
 	row := db.QueryRow(query, kitsuId)
@@ -338,6 +339,7 @@ var query_get_anidb_id_by_mal_id = fmt.Sprintf(
 	IdMapColumn.MAL,
 )
 
+// TODO: add cache
 func GetAniDBIdByMALId(malId string) (anidbId, season string, err error) {
 	query := query_get_anidb_id_by_mal_id
 	row := db.QueryRow(query, malId)
