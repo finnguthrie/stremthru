@@ -95,7 +95,8 @@ var query_get_imdb_id_by_trakt_id = fmt.Sprintf(
 	MapColumn.IMDBId,
 )
 var query_get_imdb_id_by_trakt_id_cond_movie = fmt.Sprintf(
-	` item_type IN (%s,'') AND itm.%s IN `,
+	` coalesce(it.%s, '') IN (%s,'') AND itm.%s IN `,
+	Column.Type,
 	fmt.Sprintf(
 		util.RepeatJoin("'%s'", len(movieTypes), ","),
 		movieTypes[0],
@@ -104,7 +105,8 @@ var query_get_imdb_id_by_trakt_id_cond_movie = fmt.Sprintf(
 	MapColumn.TraktId,
 )
 var query_get_imdb_id_by_trakt_id_cond_show = fmt.Sprintf(
-	` item_type IN (%s) AND itm.%s IN `,
+	` coalesce(it.%s, '') IN (%s) AND itm.%s IN `,
+	Column.Type,
 	fmt.Sprintf(
 		util.RepeatJoin("'%s'", len(showTypes), ","),
 		showTypes[0],
@@ -191,7 +193,8 @@ var query_get_imdb_id_by_tmdb_id = fmt.Sprintf(
 	MapColumn.IMDBId,
 )
 var query_get_imdb_id_by_tmdb_id_cond_movie = fmt.Sprintf(
-	` item_type IN (%s,'') AND itm.%s IN `,
+	` coalesce(it.%s, '') IN (%s,'') AND itm.%s IN `,
+	Column.Type,
 	fmt.Sprintf(
 		util.RepeatJoin("'%s'", len(movieTypes), ","),
 		movieTypes[0],
@@ -200,7 +203,8 @@ var query_get_imdb_id_by_tmdb_id_cond_movie = fmt.Sprintf(
 	MapColumn.TMDBId,
 )
 var query_get_imdb_id_by_tmdb_id_cond_show = fmt.Sprintf(
-	` item_type IN (%s) AND itm.%s IN `,
+	` coalesce(it.%s, '') IN (%s) AND itm.%s IN `,
+	Column.Type,
 	fmt.Sprintf(
 		util.RepeatJoin("'%s'", len(showTypes), ","),
 		showTypes[0],
@@ -277,7 +281,7 @@ func GetIMDBIdByTMDBId(tmdbMovieIds, tmdbShowIds []string) (map[string]string, m
 }
 
 var query_get_imdb_id_by_tvdb_id = fmt.Sprintf(
-	`SELECT itm.%s, coalesce(it.%s, '') as item_type, itm.%s FROM %s itm LEFT JOIN %s it ON it.%s = itm.%s WHERE `,
+	`SELECT itm.%s, coalesce(it.%s, '') AS item_type, itm.%s FROM %s itm LEFT JOIN %s it ON it.%s = itm.%s WHERE `,
 	MapColumn.IMDBId,
 	Column.Type,
 	MapColumn.TVDBId,
@@ -287,7 +291,8 @@ var query_get_imdb_id_by_tvdb_id = fmt.Sprintf(
 	MapColumn.IMDBId,
 )
 var query_get_imdb_id_by_tvdb_id_cond_movie = fmt.Sprintf(
-	` item_type IN (%s,'') AND itm.%s IN `,
+	` coalesce(it.%s, '') IN (%s,'') AND itm.%s IN `,
+	Column.Type,
 	fmt.Sprintf(
 		util.RepeatJoin("'%s'", len(movieTypes), ","),
 		movieTypes[0],
@@ -296,7 +301,8 @@ var query_get_imdb_id_by_tvdb_id_cond_movie = fmt.Sprintf(
 	MapColumn.TVDBId,
 )
 var query_get_imdb_id_by_tvdb_id_cond_show = fmt.Sprintf(
-	` item_type IN (%s) AND itm.%s IN `,
+	` coalesce(it.%s, '') IN (%s) AND itm.%s IN `,
+	Column.Type,
 	fmt.Sprintf(
 		util.RepeatJoin("'%s'", len(showTypes), ","),
 		showTypes[0],
@@ -631,7 +637,7 @@ func GetIdMapByTVDBId(tvdbId string) (*IMDBTitleMap, error) {
 }
 
 var query_get_id_maps_by_letterboxd_id = fmt.Sprintf(
-	`SELECT %s, coalesce(it.%s, '') as item_type FROM %s itm LEFT JOIN %s it ON itm.%s = it.%s WHERE itm.%s IN `,
+	`SELECT %s, coalesce(it.%s, '') AS item_type FROM %s itm LEFT JOIN %s it ON itm.%s = it.%s WHERE itm.%s IN `,
 	db.JoinPrefixedColumnNames(
 		"itm.",
 		MapColumn.IMDBId,
