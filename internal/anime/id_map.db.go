@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/MunifTanjim/stremthru/internal/anidb"
+	"github.com/MunifTanjim/stremthru/internal/cache"
 	"github.com/MunifTanjim/stremthru/internal/db"
 	"github.com/MunifTanjim/stremthru/internal/util"
 )
@@ -315,16 +316,29 @@ var query_get_anidb_id_by_kitsu_id = fmt.Sprintf(
 	IdMapColumn.Kitsu,
 )
 
-// TODO: add cache
+type cachedAniDBId struct {
+	Id     string
+	Season string
+}
+
+var anidbIdByKitsuIdCache = cache.NewLRUCache[cachedAniDBId](&cache.CacheConfig{
+	Lifetime: 60 * time.Second,
+	Name:     "anidb_id_by_kitsu_id",
+})
+
 func GetAniDBIdByKitsuId(kitsuId string) (anidbId, season string, err error) {
+	cachedAniDBId := cachedAniDBId{}
+	if anidbIdByKitsuIdCache.Get(kitsuId, &cachedAniDBId) {
+		return cachedAniDBId.Id, cachedAniDBId.Season, nil
+	}
 	query := query_get_anidb_id_by_kitsu_id
 	row := db.QueryRow(query, kitsuId)
-	if err = row.Scan(&anidbId, &season); err != nil {
-		if err == sql.ErrNoRows {
-			return "", "", nil
-		}
+	if err = row.Scan(&anidbId, &season); err != nil && err != sql.ErrNoRows {
 		return "", "", err
 	}
+	cachedAniDBId.Id = anidbId
+	cachedAniDBId.Season = season
+	anidbIdByKitsuIdCache.Add(kitsuId, cachedAniDBId)
 	return anidbId, season, nil
 }
 
@@ -339,16 +353,24 @@ var query_get_anidb_id_by_mal_id = fmt.Sprintf(
 	IdMapColumn.MAL,
 )
 
-// TODO: add cache
+var anidbIdByMALIdCache = cache.NewLRUCache[cachedAniDBId](&cache.CacheConfig{
+	Lifetime: 60 * time.Second,
+	Name:     "anidb_id_by_mal_id",
+})
+
 func GetAniDBIdByMALId(malId string) (anidbId, season string, err error) {
+	cachedAniDBId := cachedAniDBId{}
+	if anidbIdByMALIdCache.Get(malId, &cachedAniDBId) {
+		return cachedAniDBId.Id, cachedAniDBId.Season, nil
+	}
 	query := query_get_anidb_id_by_mal_id
 	row := db.QueryRow(query, malId)
-	if err = row.Scan(&anidbId, &season); err != nil {
-		if err == sql.ErrNoRows {
-			return "", "", nil
-		}
+	if err = row.Scan(&anidbId, &season); err != nil && err != sql.ErrNoRows {
 		return "", "", err
 	}
+	cachedAniDBId.Id = anidbId
+	cachedAniDBId.Season = season
+	anidbIdByMALIdCache.Add(malId, cachedAniDBId)
 	return anidbId, season, nil
 }
 
