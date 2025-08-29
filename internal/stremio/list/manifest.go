@@ -10,6 +10,7 @@ import (
 	"github.com/MunifTanjim/stremthru/internal/letterboxd"
 	"github.com/MunifTanjim/stremthru/internal/mdblist"
 	"github.com/MunifTanjim/stremthru/internal/shared"
+	stremio_shared "github.com/MunifTanjim/stremthru/internal/stremio/shared"
 	"github.com/MunifTanjim/stremthru/internal/tmdb"
 	"github.com/MunifTanjim/stremthru/internal/trakt"
 	"github.com/MunifTanjim/stremthru/internal/tvdb"
@@ -317,6 +318,8 @@ func handleManifest(w http.ResponseWriter, r *http.Request) {
 		SendError(w, r, err)
 		return
 	}
+
+	stremio_shared.ClaimAddonOnStremioAddonsDotNet(manifest, "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..-k6ZaWCzQoNxjRr4MvahYA.SyWjehFEsL8-h669PzA-Yg45v2FcMJwtofmMvZ3Dt7a8ymwIgSY88pt4dVxNNgiyPUOcWuzATr9ePSbnOoWAtNY1YfI-o2sPm0meTufxG0QClgFTL61J6alwoYBJkU71.kYSlZJGDWTGoMJdWegtxHQ")
 
 	SendResponse(w, r, 200, manifest)
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/MunifTanjim/stremthru/internal/config"
 	"github.com/MunifTanjim/stremthru/internal/shared"
+	stremio_shared "github.com/MunifTanjim/stremthru/internal/stremio/shared"
 	"github.com/MunifTanjim/stremthru/stremio"
 )
 
@@ -83,6 +84,8 @@ func GetManifest(r *http.Request, upstreamManifests []stremio.Manifest, ud *User
 		manifest.ID = shared.GetReversedHostname(r) + ".wrap"
 		manifest.Name = "StremThru Wrap"
 		manifest.Description = "Stremio Addon to Wrap other Addons with StremThru"
+
+		stremio_shared.ClaimAddonOnStremioAddonsDotNet(manifest, "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..TZNrt5BpBCR1Qt-EpRoLBg.5OIDlcyBZDC6KG2gqXLi-A9beJhl2mvKZoiMQ8MlBNqzowgd-jMtu5WLRBUqFfuHemkItmqWNnTV17JktfJNFFl1ookUSHM8LUoezTOCBBTCOAWVJpbCy8dKs_lo5Bpa.j9_jgJc8T32v74o4zVMu8g")
 	}
 
 	if len(upstreamManifests) == 1 {
