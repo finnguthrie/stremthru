@@ -35,6 +35,11 @@ func handleManifest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if ud.GetEncoded() == "" {
+		SendResponse(w, r, 200, GetManifest(r, nil, ud))
+		return
+	}
+
 	ctx, err := ud.GetRequestContext(r)
 	if err != nil {
 		shared.ErrorBadRequest(r, "failed to get request context: "+err.Error()).Send(w, r)

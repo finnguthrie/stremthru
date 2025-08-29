@@ -334,6 +334,10 @@ func getUserData(r *http.Request) (*UserData, error) {
 	log := server.GetReqCtx(r).Log
 
 	if IsMethod(r, http.MethodGet) || IsMethod(r, http.MethodHead) {
+		if data.GetEncoded() == "" {
+			return data, nil
+		}
+
 		if err := udManager.Resolve(data); err != nil {
 			return nil, err
 		}
