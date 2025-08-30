@@ -4,8 +4,12 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 
 	fuzzy "github.com/paul-mannino/go-fuzzywuzzy"
+	"golang.org/x/text/runes"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 )
 
 func RepeatJoin(s string, count int, sep string) string {
@@ -40,5 +44,14 @@ func normalizeForFuzzySearch(s string) string {
 }
 
 func FuzzyTokenSetRatio(query, input string) int {
-	return fuzzy.TokenSetRatio(normalizeForFuzzySearch(query), normalizeForFuzzySearch(input))
+	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
+	query = normalizeForFuzzySearch(query)
+	if result, _, err := transform.String(t, query); err == nil {
+		query = result
+	}
+	input = normalizeForFuzzySearch(input)
+	if result, _, err := transform.String(t, input); err == nil {
+		input = result
+	}
+	return fuzzy.TokenSetRatio(query, input)
 }
