@@ -177,11 +177,11 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 
 				items := getCatalogItems(ctx.Store, ctx.StoreAuthToken, ctx.ClientIP, idPrefix, idr)
 				if meta.Name != "" {
-					query := strings.ToLower(meta.Name)
+					normalizer := util.NewStringNormalizer()
 					filteredItems := []CachedCatalogItem{}
 					for i := range items {
 						item := &items[i]
-						if util.FuzzyTokenSetRatio(query, strings.ToLower(item.Name)) > 90 {
+						if util.FuzzyTokenSetRatio(meta.Name, item.Name, normalizer) > 90 {
 							filteredItems = append(filteredItems, *item)
 						}
 					}
@@ -287,6 +287,7 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 
 				addedItemIdx := map[int]struct{}{}
 				filteredItems := []CachedCatalogItem{}
+				normalizer := util.NewStringNormalizer()
 				for i := range titles {
 					title := &titles[i]
 					for i := range items {
@@ -294,7 +295,7 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 							continue
 						}
 						item := &items[i]
-						if util.FuzzyTokenSetRatio(title.Value, item.Name) > 90 {
+						if util.FuzzyTokenSetRatio(title.Value, item.Name, normalizer) > 90 {
 							filteredItems = append(filteredItems, *item)
 							addedItemIdx[i] = struct{}{}
 						}

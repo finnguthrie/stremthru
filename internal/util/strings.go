@@ -43,15 +43,27 @@ func normalizeForFuzzySearch(s string) string {
 	return fuzzy.Cleanse(s, false)
 }
 
-func FuzzyTokenSetRatio(query, input string) int {
-	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
-	query = normalizeForFuzzySearch(query)
-	if result, _, err := transform.String(t, query); err == nil {
-		query = result
-	}
+type StringNormalizer struct {
+	t transform.Transformer
+}
+
+func (sn *StringNormalizer) Normalize(input string) string {
 	input = normalizeForFuzzySearch(input)
-	if result, _, err := transform.String(t, input); err == nil {
-		input = result
+	if result, _, err := transform.String(sn.t, input); err == nil {
+		return result
 	}
-	return fuzzy.TokenSetRatio(query, input)
+	return input
+}
+
+func NewStringNormalizer() *StringNormalizer {
+	sn := StringNormalizer{}
+	sn.t = transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
+	return &sn
+}
+
+func FuzzyTokenSetRatio(query, input string, normalizer *StringNormalizer) int {
+	if normalizer == nil {
+		normalizer = NewStringNormalizer()
+	}
+	return fuzzy.TokenSetRatio(normalizer.Normalize(query), normalizer.Normalize(input))
 }

@@ -15,6 +15,7 @@ import (
 	stremio_store_webdl "github.com/MunifTanjim/stremthru/internal/stremio/store/webdl"
 	"github.com/MunifTanjim/stremthru/internal/torrent_info"
 	"github.com/MunifTanjim/stremthru/internal/torrent_stream"
+	"github.com/MunifTanjim/stremthru/internal/util"
 	"github.com/MunifTanjim/stremthru/internal/worker/worker_queue"
 	"github.com/MunifTanjim/stremthru/store"
 	"github.com/MunifTanjim/stremthru/stremio"
@@ -283,7 +284,8 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 	items := getCatalogItems(ctx.Store, ctx.StoreAuthToken, ctx.ClientIP, getIdPrefix(idStoreCode), idr)
 
 	if extra.Search != "" {
-		query := strings.ToLower(extra.Search)
+		normalizer := util.NewStringNormalizer()
+		query := normalizer.Normalize(extra.Search)
 		parts := whitespacesRegex.Split(query, -1)
 		includeStoreActions := false
 		for i, part := range parts {
@@ -305,7 +307,7 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 		}
 		for i := range items {
 			item := &items[i]
-			if regex.MatchString(strings.ToLower(item.Name)) {
+			if regex.MatchString(normalizer.Normalize(item.Name)) {
 				filteredItems = append(filteredItems, *item)
 			}
 		}
