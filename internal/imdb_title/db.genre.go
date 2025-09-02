@@ -68,12 +68,8 @@ var query_record_genre_before_values = fmt.Sprintf(
 	GenreColumn.TId,
 	GenreColumn.Genre,
 )
-var query_record_genre_value_placeholder = fmt.Sprintf(
-	`(?, ?)`,
-)
-var query_record_genre_after_values = fmt.Sprintf(
-	` ON CONFLICT DO NOTHING`,
-)
+var query_record_genre_value_placeholder = `(?, ?)`
+var query_record_genre_after_values = ` ON CONFLICT DO NOTHING`
 
 func recordGenre(tx *db.Tx, metas []IMDBTitleMeta) error {
 	count := len(metas)
@@ -89,23 +85,30 @@ func recordGenre(tx *db.Tx, metas []IMDBTitleMeta) error {
 		meta := &metas[i]
 		if len(meta.Genres) > 0 {
 			cleanupArgs = append(cleanupArgs, meta.TId)
-		}
-		for _, genre := range meta.Genres {
-			args = append(args, meta.TId, genre)
+
+			for _, genre := range meta.Genres {
+				args = append(args, meta.TId, genre)
+			}
 		}
 	}
 
-	cleanupQuery := query_record_genre_cleanup + "(" + util.RepeatJoin("?", len(cleanupArgs), ",") + ")"
+	if len(cleanupArgs) > 0 {
+		cleanupQuery := query_record_genre_cleanup + "(" + util.RepeatJoin("?", len(cleanupArgs), ",") + ")"
 
-	if _, err := tx.Exec(cleanupQuery, cleanupArgs...); err != nil {
-		return err
+		if _, err := tx.Exec(cleanupQuery, cleanupArgs...); err != nil {
+			return err
+		}
 	}
 
-	query := query_record_genre_before_values +
-		util.RepeatJoin(query_record_genre_value_placeholder, len(args)/2, ",") +
-		query_record_genre_after_values
+	if len(args) > 0 {
+		query := query_record_genre_before_values +
+			util.RepeatJoin(query_record_genre_value_placeholder, len(args)/2, ",") +
+			query_record_genre_after_values
 
-	_, err := tx.Exec(query, args...)
+		if _, err := tx.Exec(query, args...); err != nil {
+			return err
+		}
+	}
 
-	return err
+	return nil
 }
