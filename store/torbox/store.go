@@ -204,7 +204,7 @@ func (c *StoreClient) CheckMagnet(params *store.CheckMagnetParams) (*store.Check
 			Hash: hash,
 		}
 		if t, ok := tByHash[hash]; ok {
-			tInfo.TorrentTitle = t.Name
+			tInfo.TorrentTitle = t.GetName()
 			tInfo.Size = t.Size
 			item.Status = store.MagnetStatusCached
 			for idx, f := range t.Files {
@@ -293,7 +293,7 @@ func (c *StoreClient) AddMagnet(params *store.AddMagnetParams) (*store.AddMagnet
 	if err != nil {
 		return nil, err
 	}
-	data.Name = t.Data.Name
+	data.Name = t.Data.GetName()
 	data.Size = t.Data.Size
 	data.AddedAt = t.Data.GetAddedAt()
 	if t.Data.DownloadFinished && t.Data.DownloadPresent {
@@ -305,8 +305,8 @@ func (c *StoreClient) AddMagnet(params *store.AddMagnetParams) (*store.AddMagnet
 		file := store.MagnetFile{
 			Idx:       f.Id,
 			Link:      LockedFileLink("").Create(res.Data.TorrentId, f.Id),
-			Name:      f.ShortName,
-			Path:      "/" + f.Name,
+			Name:      f.GetName(),
+			Path:      f.GetPath(),
 			Size:      f.Size,
 			VideoHash: f.OpensubtitlesHash,
 		}
@@ -400,7 +400,7 @@ func (c *StoreClient) GetMagnet(params *store.GetMagnetParams) (*store.GetMagnet
 	data := &store.GetMagnetData{
 		Id:      params.Id,
 		Hash:    res.Data.Hash,
-		Name:    res.Data.Name,
+		Name:    res.Data.GetName(),
 		Size:    res.Data.Size,
 		Status:  store.MagnetStatusQueued,
 		Files:   []store.MagnetFile{},
@@ -415,8 +415,8 @@ func (c *StoreClient) GetMagnet(params *store.GetMagnetParams) (*store.GetMagnet
 		file := store.MagnetFile{
 			Idx:       f.Id,
 			Link:      LockedFileLink("").Create(res.Data.Id, f.Id),
-			Name:      f.ShortName,
-			Path:      "/" + f.Name,
+			Name:      f.GetName(),
+			Path:      f.GetPath(),
 			Size:      f.Size,
 			VideoHash: f.OpensubtitlesHash,
 		}
@@ -447,7 +447,7 @@ func (c *StoreClient) ListMagnets(params *store.ListMagnetsParams) (*store.ListM
 		item := store.ListMagnetsDataItem{
 			Id:      strconv.Itoa(t.Id),
 			Hash:    t.Hash,
-			Name:    t.Name,
+			Name:    t.GetName(),
 			Size:    t.Size,
 			Status:  store.MagnetStatusUnknown,
 			AddedAt: t.GetAddedAt(),

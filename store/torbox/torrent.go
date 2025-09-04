@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/MunifTanjim/stremthru/core"
+	"github.com/MunifTanjim/stremthru/internal/util"
 )
 
 type CheckTorrentsCachedDataItemFile struct {
@@ -19,7 +20,8 @@ func (f CheckTorrentsCachedDataItemFile) GetName() string {
 }
 
 func (f CheckTorrentsCachedDataItemFile) GetPath() string {
-	return "/" + f.Name
+	path, _ := util.RemoveRootFolderFromPath(f.Name)
+	return path
 }
 
 type CheckTorrentsCachedDataItem struct {
@@ -30,6 +32,15 @@ type CheckTorrentsCachedDataItem struct {
 	Seeds    int                               `json:"seeds"`
 	Peers    int                               `json:"peers"`
 	Files    []CheckTorrentsCachedDataItemFile `json:"files"`
+}
+
+func (t CheckTorrentsCachedDataItem) GetName() string {
+	if len(t.Files) > 0 {
+		if _, rootFolder := util.RemoveRootFolderFromPath(t.Files[0].Name); rootFolder != "" {
+			return rootFolder
+		}
+	}
+	return t.Name
 }
 
 type CheckTorrentsCachedData []CheckTorrentsCachedDataItem
@@ -108,6 +119,15 @@ type TorrentFile struct {
 	OpensubtitlesHash string `json:"opensubtitles_hash"`
 }
 
+func (f TorrentFile) GetName() string {
+	return f.ShortName
+}
+
+func (f TorrentFile) GetPath() string {
+	path, _ := util.RemoveRootFolderFromPath(f.Name)
+	return path
+}
+
 type TorrentDownloadState string
 
 const (
@@ -147,6 +167,15 @@ type Torrent struct {
 	Files            []TorrentFile        `json:"files"`
 	InactiveCheck    int                  `json:"inactive_check"`
 	Availability     float32              `json:"availability"`
+}
+
+func (t Torrent) GetName() string {
+	if len(t.Files) > 0 {
+		if _, rootFolder := util.RemoveRootFolderFromPath(t.Files[0].Name); rootFolder != "" {
+			return rootFolder
+		}
+	}
+	return t.Name
 }
 
 func (t Torrent) GetAddedAt() time.Time {
