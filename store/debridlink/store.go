@@ -149,7 +149,6 @@ func (c *StoreClient) AddMagnet(params *store.AddMagnetParams) (*store.AddMagnet
 				Idx:  idx,
 				Name: f.Name,
 				Size: f.Size,
-				Path: "/" + f.Name,
 				Link: f.DownloadUrl,
 			}
 
@@ -195,7 +194,6 @@ func (c *StoreClient) GetMagnet(params *store.GetMagnetParams) (*store.GetMagnet
 			Idx:  idx,
 			Link: f.DownloadUrl,
 			Name: f.Name,
-			Path: "/" + f.Name,
 			Size: f.Size,
 		}
 
