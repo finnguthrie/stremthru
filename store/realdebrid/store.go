@@ -192,6 +192,7 @@ func getVideoFileIdsFromTorrent(t *GetTorrentInfoData) []string {
 func (f *GetTorrentInfoDataFile) toStoreMagnetFile() store.MagnetFile {
 	return store.MagnetFile{
 		Idx:  f.Id - 1,
+		Path: f.Path,
 		Name: filepath.Base(f.Path),
 		Size: f.Bytes,
 	}
@@ -396,13 +397,8 @@ func (c *StoreClient) GetMagnet(params *store.GetMagnetParams) (*store.GetMagnet
 					link = res.Data.Links[idx]
 				}
 				smFile := f.toStoreMagnetFile()
-				data.Files = append(data.Files, store.MagnetFile{
-					Idx:  smFile.Idx,
-					Name: smFile.Name,
-					Path: f.Path,
-					Size: smFile.Size,
-					Link: link,
-				})
+				smFile.Link = link
+				data.Files = append(data.Files, smFile)
 			}
 		}
 		c.setCachedGetMagnet(params, params.Id, data)
