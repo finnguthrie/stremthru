@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"net/http"
 	"path"
-	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
@@ -196,8 +195,8 @@ func (c *StoreClient) getCachedMagnetFiles(apiKey string, magnet string, include
 	for idx, f := range res.Data.Content {
 		file := &store.MagnetFile{
 			Idx:  idx,
-			Name: filepath.Base(f.Path),
-			Path: "/" + f.Path,
+			Name: f.GetName(),
+			Path: f.GetPath(),
 			Size: f.Size,
 		}
 		if includeLink {
@@ -427,7 +426,7 @@ func (id CachedMagnetId) toHash() string {
 	return strings.TrimPrefix(string(id), CachedMagnetIdPrefix)
 }
 
-func listFolderFlat(c *StoreClient, apiKey string, folderId string, result []store.MagnetFile, parent *store.MagnetFile, idx int) ([]store.MagnetFile, error) {
+func listFolderFlat(c *StoreClient, apiKey string, folderId string, result []store.MagnetFile, parent *store.MagnetFile) ([]store.MagnetFile, error) {
 	if result == nil {
 		result = []store.MagnetFile{}
 	}
@@ -437,6 +436,11 @@ func listFolderFlat(c *StoreClient, apiKey string, folderId string, result []sto
 	c_res, err := c.client.ListFolders(params)
 	if err != nil {
 		return nil, err
+	}
+
+	idx := 0
+	if parent != nil {
+		idx = parent.Idx
 	}
 
 	for _, f := range c_res.Data.Content {
@@ -457,10 +461,11 @@ func listFolderFlat(c *StoreClient, apiKey string, folderId string, result []sto
 		}
 
 		if f.Type == FolderItemTypeFolder {
-			result, err = listFolderFlat(c, apiKey, f.Id, result, file, idx)
+			result, err = listFolderFlat(c, apiKey, f.Id, result, file)
 			if err != nil {
 				return nil, err
 			}
+			idx = result[len(result)-1].Idx + 1
 		} else {
 			result = append(result, *file)
 			idx++
@@ -559,7 +564,7 @@ func (c *StoreClient) AddMagnet(params *store.AddMagnetParams) (*store.AddMagnet
 	if transfer.Status == TransferStatusFinished {
 		data.Status = store.MagnetStatusDownloaded
 
-		files, err := listFolderFlat(c, params.APIKey, folder.Id, nil, nil, 0)
+		files, err := listFolderFlat(c, params.APIKey, folder.Id, nil, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -662,8 +667,8 @@ func (c *StoreClient) GetMagnet(params *store.GetMagnetParams) (*store.GetMagnet
 	}
 	if transfer.Status == TransferStatusFinished {
 		files, err := listFolderFlat(c, params.APIKey, transfer.FolderId, nil, &store.MagnetFile{
-			Path: "/" + transfer.Name,
-		}, 0)
+			Path: "/",
+		})
 		if err != nil {
 			return nil, err
 		}

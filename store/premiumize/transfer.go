@@ -2,7 +2,10 @@ package premiumize
 
 import (
 	"net/url"
+	"path/filepath"
 	"time"
+
+	"github.com/MunifTanjim/stremthru/internal/util"
 )
 
 type TranscodeStatus string
@@ -102,6 +105,15 @@ type CreateDirectDownloadLinkDataContent struct {
 	Link            string          `json:"link"`
 	StreamLink      string          `json:"stream_link"`
 	TranscodeStatus TranscodeStatus `json:"transcode_status"`
+}
+
+func (f CreateDirectDownloadLinkDataContent) GetPath() string {
+	path, _ := util.RemoveRootFolderFromPath(f.Path)
+	return path
+}
+
+func (f CreateDirectDownloadLinkDataContent) GetName() string {
+	return filepath.Base(f.Path)
 }
 
 type CreateDirectDownloadLinkData struct {
