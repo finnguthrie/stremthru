@@ -147,13 +147,13 @@ func (c APIClient) beforeRequest(req *http.Request) error {
 	return nil
 }
 
-func (c APIClient) GetRetryAfter() time.Duration {
+func (c *APIClient) GetRetryAfter() time.Duration {
 	return c.retryAfter
 }
 
 var requestMutex sync.Mutex
 
-func (c APIClient) Request(method, path string, params request.Context, v request.ResponseContainer) (*http.Response, error) {
+func (c *APIClient) Request(method, path string, params request.Context, v request.ResponseContainer) (*http.Response, error) {
 	requestMutex.Lock()
 	defer requestMutex.Unlock()
 

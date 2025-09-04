@@ -21,7 +21,7 @@ func beforeRequestFetchListID(req *http.Request) error {
 	return nil
 }
 
-func (c APIClient) FetchListID(params *FetchListIDParams) (string, error) {
+func (c *APIClient) FetchListID(params *FetchListIDParams) (string, error) {
 	params.BeforeDo(beforeRequestFetchListID)
 	response := ResponseError{}
 	res, err := c.Request("HEAD", params.ListURL, params, &response)
@@ -309,7 +309,7 @@ type FetchListParams struct {
 	Id string
 }
 
-func (c APIClient) FetchList(params *FetchListParams) (request.APIResponse[List], error) {
+func (c *APIClient) FetchList(params *FetchListParams) (request.APIResponse[List], error) {
 	response := fetchListData{}
 	res, err := c.Request("GET", "/v0/list/"+params.Id, params, &response)
 	return request.NewAPIResponse(res, response.List), err
@@ -362,7 +362,7 @@ type FetchListEntriesParams struct {
 	PerPage int // default 20, max 100
 }
 
-func (c APIClient) FetchListEntries(params *FetchListEntriesParams) (request.APIResponse[ListEntriesResponse], error) {
+func (c *APIClient) FetchListEntries(params *FetchListEntriesParams) (request.APIResponse[ListEntriesResponse], error) {
 	query := url.Values{}
 	if params.Cursor != "" {
 		query.Set("cursor", params.Cursor)
