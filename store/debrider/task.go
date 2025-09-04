@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/MunifTanjim/stremthru/core"
+	"github.com/MunifTanjim/stremthru/internal/util"
 )
 
 type DownloadTaskType string
@@ -71,11 +72,12 @@ type TaskFile struct {
 }
 
 func (f *TaskFile) GetPath() string {
-	return "/" + f.Name
+	path, _ := util.RemoveRootFolderFromPath(f.Name)
+	return path
 }
 
 func (f *TaskFile) GetName() string {
-	return filepath.Base(f.GetPath())
+	return filepath.Base(f.Name)
 }
 
 type TaskStatus string
