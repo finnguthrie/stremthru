@@ -217,7 +217,8 @@ func (c *StoreClient) ListMagnets(params *store.ListMagnetsParams) (*store.ListM
 	page := origOffset / limit
 	offsetInPage := origOffset % limit
 	remainingItems := origLimit
-	for remainingItems > 0 {
+	hasMore := true
+	for hasMore {
 		res, err := c.client.ListSeedboxTorrents(&ListSeedboxTorrentsParams{
 			Ctx:     params.Ctx,
 			PerPage: limit,
@@ -261,6 +262,7 @@ func (c *StoreClient) ListMagnets(params *store.ListMagnetsParams) (*store.ListM
 
 		page++
 		remainingItems -= totalResItems
+		hasMore = page < totalPages && remainingItems > 0
 	}
 
 	data.TotalItems = totalPages * limit
