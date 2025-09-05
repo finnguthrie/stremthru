@@ -1,6 +1,11 @@
 package easydebrid
 
-import "net/http"
+import (
+	"net/http"
+	"path/filepath"
+
+	"github.com/MunifTanjim/stremthru/internal/util"
+)
 
 type LookupLinkDetailsDataItemFile struct {
 	Size   int64  `json:"size"`
@@ -8,10 +13,29 @@ type LookupLinkDetailsDataItemFile struct {
 	Folder string `json:"folder"`
 }
 
+func (f *LookupLinkDetailsDataItemFile) GetPath() string {
+	path, _ := util.RemoveRootFolderFromPath(filepath.Join(f.Folder, f.Name))
+	return path
+}
+
+func (f *LookupLinkDetailsDataItemFile) GetName() string {
+	return f.Name
+}
+
 type LookupLinkDetailsDataItem struct {
 	ResponseContainer
 	Cached bool                            `json:"cached"`
 	Files  []LookupLinkDetailsDataItemFile `json:"files"`
+}
+
+func (t LookupLinkDetailsDataItem) GetName() string {
+	if len(t.Files) > 0 {
+		f := &t.Files[0]
+		if _, rootFolder := util.RemoveRootFolderFromPath(filepath.Join(f.Folder, f.Name)); rootFolder != "" {
+			return rootFolder
+		}
+	}
+	return ""
 }
 
 type LookupLinkDetailsData struct {

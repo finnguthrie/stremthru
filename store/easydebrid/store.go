@@ -93,22 +93,23 @@ func (s *StoreClient) AddMagnet(params *store.AddMagnetParams) (*store.AddMagnet
 		Files:   []store.MagnetFile{},
 		AddedAt: time.Unix(0, 0),
 	}
-	if len(res.Data.Result) < 1 {
+	if len(res.Data.Result) == 0 {
 		return data, nil
 	}
 	detail := res.Data.Result[0]
+	if name := detail.GetName(); name != "" {
+		data.Name = name
+	}
 	if detail.Cached {
 		data.Status = store.MagnetStatusDownloaded
 		for idx, f := range detail.Files {
-			if core.HasVideoExtension(f.Name) {
-				data.Files = append(data.Files, store.MagnetFile{
-					Idx:  idx,
-					Link: LockedFileLink("").create(magnet.Hash, idx),
-					Name: f.Name,
-					Path: "/" + f.Folder + "/" + f.Name,
-					Size: f.Size,
-				})
-			}
+			data.Files = append(data.Files, store.MagnetFile{
+				Idx:  idx,
+				Link: LockedFileLink("").create(magnet.Hash, idx),
+				Name: f.GetName(),
+				Path: f.GetPath(),
+				Size: f.Size,
+			})
 		}
 	}
 	return data, nil
@@ -205,7 +206,7 @@ func (s *StoreClient) CheckMagnet(params *store.CheckMagnetParams) (*store.Check
 			for idx, f := range detail.Files {
 				file := torrent_stream.File{
 					Idx:  idx,
-					Name: f.Name,
+					Name: f.GetName(),
 					Size: f.Size,
 				}
 				tInfo.Files = append(tInfo.Files, file)
@@ -277,23 +278,24 @@ func (s *StoreClient) GetMagnet(params *store.GetMagnetParams) (*store.GetMagnet
 	data := &store.GetMagnetData{
 		Id:      params.Id,
 		Hash:    magnet.Hash,
-		Name:    magnet.Name,
+		Name:    detail.GetName(),
 		Size:    0,
 		Status:  store.MagnetStatusDownloaded,
 		Files:   []store.MagnetFile{},
 		AddedAt: time.Unix(0, 0),
 	}
+	if data.Name == "" {
+		data.Name = magnet.Name
+	}
 	for idx, f := range detail.Files {
 		data.Size += f.Size
-		if core.HasVideoExtension(f.Name) {
-			data.Files = append(data.Files, store.MagnetFile{
-				Idx:  idx,
-				Link: LockedFileLink("").create(magnet.Hash, idx),
-				Name: f.Name,
-				Path: "/" + f.Folder + "/" + f.Name,
-				Size: f.Size,
-			})
-		}
+		data.Files = append(data.Files, store.MagnetFile{
+			Idx:  idx,
+			Link: LockedFileLink("").create(magnet.Hash, idx),
+			Name: f.GetName(),
+			Path: f.GetPath(),
+			Size: f.Size,
+		})
 	}
 	return data, nil
 }
