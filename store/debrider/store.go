@@ -2,7 +2,6 @@ package debrider
 
 import (
 	"net/http"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -202,7 +201,7 @@ func (s *StoreClient) CheckMagnet(params *store.CheckMagnetParams) (*store.Check
 				for idx, f := range detail.Files {
 					file := torrent_stream.File{
 						Idx:  idx,
-						Name: filepath.Base("/" + f.Name),
+						Name: f.GetName(),
 						Size: f.Size,
 					}
 					tInfo.Files = append(tInfo.Files, file)

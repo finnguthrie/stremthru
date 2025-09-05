@@ -1,9 +1,24 @@
 package debrider
 
+import (
+	"path/filepath"
+
+	"github.com/MunifTanjim/stremthru/internal/util"
+)
+
 type CheckLinkAvailabilityDataItemFile struct {
 	Name         string `json:"name"`
 	Size         int64  `json:"size"`
 	DownloadLink string `json:"download_link"`
+}
+
+func (f *CheckLinkAvailabilityDataItemFile) GetPath() string {
+	path, _ := util.RemoveRootFolderFromPath(f.Name)
+	return path
+}
+
+func (f *CheckLinkAvailabilityDataItemFile) GetName() string {
+	return filepath.Base(f.Name)
 }
 
 type CheckLinkAvailabilityDataItem struct {
