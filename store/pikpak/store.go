@@ -283,7 +283,7 @@ func (s *StoreClient) GenerateLink(params *store.GenerateLinkParams) (*store.Gen
 	return data, nil
 }
 
-func (c *StoreClient) listFilesFlat(ctx Ctx, folderId string, result []store.MagnetFile, parent *store.MagnetFile, idx int, rootFolderId string) ([]store.MagnetFile, error) {
+func (c *StoreClient) listFilesFlat(ctx Ctx, folderId string, result []store.MagnetFile, parent *store.MagnetFile, rootFolderId string) ([]store.MagnetFile, error) {
 	if result == nil {
 		result = []store.MagnetFile{}
 	}
@@ -315,14 +315,12 @@ func (c *StoreClient) listFilesFlat(ctx Ctx, folderId string, result []store.Mag
 		}
 
 		if f.Kind == FileKindFolder {
-			result, err = c.listFilesFlat(ctx, f.Id, result, file, idx, rootFolderId)
+			result, err = c.listFilesFlat(ctx, f.Id, result, file, rootFolderId)
 			if err != nil {
 				return nil, err
 			}
-			idx = len(result)
 		} else {
 			result = append(result, *file)
-			idx++
 		}
 	}
 
@@ -358,14 +356,18 @@ func (s *StoreClient) GetMagnet(params *store.GetMagnetParams) (*store.GetMagnet
 	if res.Data.Phase == FilePhaseComplete {
 		data.Status = store.MagnetStatusDownloaded
 		if res.Data.Kind == FileKindFolder {
-			files, err := s.listFilesFlat(ctx, data.Id, nil, nil, 0, data.Id)
+			files, err := s.listFilesFlat(ctx, data.Id, nil, nil, data.Id)
 			if err != nil {
 				return nil, err
 			}
 			data.Files = files
+			data.Size = 0
+			for i := range files {
+				data.Size += files[i].Size
+			}
 		} else {
 			data.Files = append(data.Files, store.MagnetFile{
-				Idx:  0,
+				Idx:  -1,
 				Link: LockedFileLink("").create(data.Id, data.Id),
 				Name: data.Name,
 				Path: "/" + data.Name,
