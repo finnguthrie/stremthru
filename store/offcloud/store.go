@@ -212,6 +212,8 @@ func (s *StoreClient) GenerateLink(params *store.GenerateLinkParams) (*store.Gen
 func getMagnetStatus(status CloudDownloadStatus) store.MagnetStatus {
 	switch status {
 	case CloudDownloadStatusCreated:
+		return store.MagnetStatusQueued
+	case CloudDownloadStatusDownloading:
 		return store.MagnetStatusDownloading
 	case CloudDownloadStatusDownloaded:
 		return store.MagnetStatusDownloaded

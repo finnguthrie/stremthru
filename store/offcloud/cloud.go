@@ -32,9 +32,10 @@ func (c APIClient) CheckCache(params *CheckCacheParams) (APIResponse[CheckCacheD
 type CloudDownloadStatus string
 
 const (
-	CloudDownloadStatusCreated    CloudDownloadStatus = "created"
-	CloudDownloadStatusDownloaded CloudDownloadStatus = "downloaded"
-	CloudDownloadStatusError      CloudDownloadStatus = "error"
+	CloudDownloadStatusCreated     CloudDownloadStatus = "created"
+	CloudDownloadStatusDownloading CloudDownloadStatus = "downloading"
+	CloudDownloadStatusDownloaded  CloudDownloadStatus = "downloaded"
+	CloudDownloadStatusError       CloudDownloadStatus = "error"
 )
 
 type AddCloudDownloadParams struct {
@@ -83,13 +84,16 @@ type GetCloudDownloadStatusParams struct {
 }
 
 type GetCloudDownloadStatusDataStatus struct {
-	Status      CloudDownloadStatus `json:"status"`
-	Amount      int                 `json:"amount"`
-	RequestId   string              `json:"requestId"`
-	FileName    string              `json:"fileName"` // can be renamed
-	FileSize    int64               `json:"fileSize"`
-	Server      string              `json:"server"`
-	IsDirectory bool                `json:"isDirectory"`
+	Status           CloudDownloadStatus `json:"status"`
+	Amount           int                 `json:"amount"` // downloaded bytes
+	RequestId        string              `json:"requestId"`
+	IsCompleted      bool                `json:"isCompleted"` // present when downloading
+	FileName         string              `json:"fileName"`    // can be renamed
+	FileSize         int64               `json:"fileSize"`
+	Server           string              `json:"server"`
+	IsDirectory      bool                `json:"isDirectory"`                // present when downloaded
+	DownloadingSpeed json.Number         `json:"downloadingSpeed,omitempty"` // present when downloading, bytes/sec
+	DownloadingTime  int                 `json:"downloadingTime,omitempty"`  // present when downloading, probably milliseconds
 }
 
 type GetCloudDownloadStatusData struct {
