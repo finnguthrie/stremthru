@@ -47,7 +47,8 @@ func (s *StoreClient) GetName() store.StoreName {
 	return s.Name
 }
 
-func (s *StoreClient) getMagnetFiles(ctx Ctx, requestId string, server string) ([]store.MagnetFile, error) {
+func (s *StoreClient) getMagnetFiles(ctx Ctx, requestId string, server string) ([]store.MagnetFile, string, error) {
+	magnetName := ""
 	files := []store.MagnetFile{}
 	pathByName := map[string]string{}
 	if server != "" {
@@ -57,12 +58,16 @@ func (s *StoreClient) getMagnetFiles(ctx Ctx, requestId string, server string) (
 			Server:    server,
 		})
 		if err != nil {
-			return files, err
+			return files, "", err
 		}
 		for _, entry := range res.Data.Entries {
-			if core.HasVideoExtension(entry) {
-				_, path, _ := strings.Cut(entry, "/")
-				pathByName[filepath.Base(entry)] = "/" + path
+			if filepath.Ext(entry) == ".aria2" {
+				continue
+			}
+			rootFolder, path, _ := strings.Cut(entry, "/")
+			pathByName[filepath.Base(entry)] = "/" + path
+			if rootFolder != "" {
+				magnetName = rootFolder
 			}
 		}
 	}
@@ -72,16 +77,15 @@ func (s *StoreClient) getMagnetFiles(ctx Ctx, requestId string, server string) (
 		RequestId: requestId,
 	})
 	if err != nil {
-		return files, err
+		return files, "", err
 	}
 	for _, link := range res.Data {
-		if !core.HasVideoExtension(string(link)) {
-			continue
-		}
-
 		info, err := link.parse()
 		if err != nil {
-			return nil, err
+			return nil, "", err
+		}
+		if filepath.Ext(info.fileName) == ".aria2" {
+			continue
 		}
 		size := int64(-1)
 		// // too expensive, should enable for non-eublic deployments later
@@ -99,7 +103,7 @@ func (s *StoreClient) getMagnetFiles(ctx Ctx, requestId string, server string) (
 		}
 		files = append(files, file)
 	}
-	return files, nil
+	return files, magnetName, nil
 }
 
 func (s *StoreClient) AddMagnet(params *store.AddMagnetParams) (*store.AddMagnetData, error) {
@@ -150,10 +154,11 @@ func (s *StoreClient) AddMagnet(params *store.AddMagnetParams) (*store.AddMagnet
 	}
 
 	if data.Status == store.MagnetStatusDownloaded {
-		files, err := s.getMagnetFiles(params.Ctx, data.Id, server)
+		files, name, err := s.getMagnetFiles(params.Ctx, data.Id, server)
 		if err != nil {
 			return nil, err
 		}
+		data.Name = name
 		data.Files = files
 	}
 
@@ -236,10 +241,11 @@ func (s *StoreClient) GetMagnet(params *store.GetMagnetParams) (*store.GetMagnet
 		AddedAt: time.Unix(0, 0),
 	}
 	if data.Status == store.MagnetStatusDownloaded {
-		files, err := s.getMagnetFiles(params.Ctx, data.Id, res.Data.Status.Server)
+		files, name, err := s.getMagnetFiles(params.Ctx, data.Id, res.Data.Status.Server)
 		if err != nil {
 			return nil, err
 		}
+		data.Name = name
 		data.Files = files
 	}
 	return data, nil
