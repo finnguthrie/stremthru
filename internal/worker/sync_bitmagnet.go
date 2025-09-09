@@ -14,6 +14,7 @@ import (
 	"github.com/MunifTanjim/stremthru/internal/kv"
 	"github.com/MunifTanjim/stremthru/internal/torrent_info"
 	ts "github.com/MunifTanjim/stremthru/internal/torrent_stream"
+	"github.com/MunifTanjim/stremthru/internal/util"
 )
 
 func InitSyncBitmagnetWorker(conf *WorkerConfig) *Worker {
@@ -51,18 +52,16 @@ func InitSyncBitmagnetWorker(conf *WorkerConfig) *Worker {
 		}
 		defer database.Close()
 
+		last_stored_cursor_updated_at := ""
 		last_cursor_updated_at := ""
 		if err := cursor.GetValue("updated_at", &last_cursor_updated_at); err != nil {
 			return err
 		} else if last_cursor_updated_at == "" {
 			last_cursor_updated_at = "2020-01-01T00:00:00Z"
 		}
-		cursor_updated_at, err := time.Parse(time.RFC3339, last_cursor_updated_at)
-		if err != nil {
-			return err
-		}
+		cursor_updated_at := util.MustParseTime(time.RFC3339, last_cursor_updated_at).UTC()
 
-		totalCount := int64(0)
+		totalCount := 0
 		limit := 500
 		offset := 0
 		hasMore := true
@@ -119,12 +118,16 @@ func InitSyncBitmagnetWorker(conf *WorkerConfig) *Worker {
 				return err
 			} else {
 				count := len(torrents)
-				totalCount += int64(count)
+				totalCount += count
 				log.Info("upserted torrents", "count", count, "total_count", totalCount)
 			}
 
-			if err := cursor.Set("updated_at", last_cursor_updated_at); err != nil {
-				return err
+			if last_stored_cursor_updated_at != last_cursor_updated_at {
+				if err := cursor.Set("updated_at", last_cursor_updated_at); err != nil {
+					return err
+				}
+				last_stored_cursor_updated_at = last_cursor_updated_at
+				log.Debug("stored cursor", "updated_at", last_cursor_updated_at)
 			}
 
 			hasMore = len(items) >= limit

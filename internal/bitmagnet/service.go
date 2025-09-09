@@ -37,7 +37,7 @@ SELECT encode(tc.info_hash, 'hex'::text)  AS hash,
 FROM torrent_contents tc
          LEFT JOIN torrents t ON tc.info_hash = t.info_hash
          LEFT JOIN torrent_files tf on t.info_hash = tf.info_hash
-WHERE tc.info_hash IN (SELECT tc.info_hash
+WHERE tc.id IN (SELECT tc.id
                        FROM torrent_contents tc
                        WHERE tc.updated_at >= $1
                          AND tc.content_type IN ('movie', 'tv_show')
