@@ -323,7 +323,7 @@ func handleConfigure(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !td.HasUpstreamError() {
-			manifests, errs := ud.getUpstreamManifests(ctx)
+			manifests, errs := ud.getUpstreamManifests(ctx, true)
 			for i := range manifests {
 				tup := &td.Upstreams[i]
 				manifest := manifests[i]
@@ -331,7 +331,7 @@ func handleConfigure(w http.ResponseWriter, r *http.Request) {
 				if tup.Error == "" {
 					if errs != nil && errs[i] != nil {
 						LogError(r, "failed to fetch manifest", errs[i])
-						tup.Error = "Failed to fetch Manifest"
+						tup.Error = "Failed to fetch Manifest: " + errs[i].Error()
 						continue
 					}
 

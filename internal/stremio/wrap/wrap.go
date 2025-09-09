@@ -46,7 +46,7 @@ func handleManifest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	manifests, errs := ud.getUpstreamManifests(ctx)
+	manifests, errs := ud.getUpstreamManifests(ctx, false)
 	if errs != nil {
 		serr := shared.ErrorInternalServerError(r, "failed to fetch upstream manifests")
 		serr.Cause = errors.Join(errs...)

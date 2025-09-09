@@ -136,6 +136,8 @@ type CheckMagnetParams struct {
 type CheckMagnetDataItem struct {
 	Hash   string       `json:"hash"`
 	Magnet string       `json:"magnet"`
+	Name   string       `json:"-"`
+	Size   int64        `json:"-"`
 	Status MagnetStatus `json:"status"`
 	Files  []MagnetFile `json:"files"`
 }

@@ -22,9 +22,16 @@ import (
 	"github.com/MunifTanjim/stremthru/stremio"
 )
 
+var upstreamManifestCache = cache.NewCache[stremio.Manifest](&cache.CacheConfig{
+	Name:          "stremio:wrap:upstreamManifest",
+	Lifetime:      6 * time.Hour,
+	LocalCapacity: 1024,
+})
+
 var upstreamResolverCache = cache.NewCache[upstreamsResolver](&cache.CacheConfig{
-	Name:     "stremio:wrap:upstreamResolver",
-	Lifetime: 24 * time.Hour,
+	Name:          "stremio:wrap:upstreamResolver",
+	Lifetime:      24 * time.Hour,
+	LocalCapacity: 2048,
 })
 
 type upstreamsResolverEntry struct {
@@ -210,7 +217,7 @@ func (ud *UserData) GetRequestContext(r *http.Request) (*context.StoreContext, e
 	return ctx, nil
 }
 
-func (ud UserData) getUpstreamManifests(ctx *context.StoreContext) ([]stremio.Manifest, []error) {
+func (ud UserData) getUpstreamManifests(ctx *context.StoreContext, useCache bool) ([]stremio.Manifest, []error) {
 	if ud.manifests == nil {
 		var wg sync.WaitGroup
 
@@ -219,25 +226,38 @@ func (ud UserData) getUpstreamManifests(ctx *context.StoreContext) ([]stremio.Ma
 		hasError := false
 		for i := range ud.Upstreams {
 			up := &ud.Upstreams[i]
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				res, err := addon.GetManifest(&stremio_addon.GetManifestParams{BaseURL: up.baseUrl, ClientIP: ctx.ClientIP})
-				manifests[i] = res.Data
-				errs[i] = err
-				if err != nil {
-					hasError = true
-				}
-			}()
+			cacheKey := up.baseUrl.String()
+			hasCached := useCache && upstreamManifestCache.Get(cacheKey, &manifests[i])
+			if !hasCached {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					res, err := addon.GetManifest(&stremio_addon.GetManifestParams{BaseURL: up.baseUrl, ClientIP: ctx.ClientIP})
+					manifests[i] = res.Data
+					errs[i] = err
+					if err != nil {
+						hasError = true
+						if err := upstreamManifestCache.AddWithLifetime(cacheKey, manifests[i], 15*time.Minute); err != nil {
+							log.Warn("failed to cache upstream manifest (empty)", "error", err, "host", up.baseUrl.Host)
+						}
+					} else {
+						if err := upstreamManifestCache.Add(cacheKey, manifests[i]); err != nil {
+							log.Warn("failed to cache upstream manifest", "error", err, "host", up.baseUrl.Host)
+						}
+					}
+				}()
+			} else if manifests[i].ID == "" {
+				hasError = true
+				errs[i] = errors.New("failed to fetch manifest: " + up.baseUrl.Host)
+			}
 		}
-
 		wg.Wait()
+
+		ud.manifests = manifests
 
 		if hasError {
 			return manifests, errs
 		}
-
-		ud.manifests = manifests
 	}
 
 	return ud.manifests, nil
@@ -251,15 +271,17 @@ func (ud UserData) getUpstreamsResolver(ctx *context.StoreContext) (upstreamsRes
 			return ud.resolver, nil
 		}
 
-		manifests, errs := ud.getUpstreamManifests(ctx)
-		if errs != nil {
-			return nil, errors.Join(errs...)
-		}
+		manifests, errs := ud.getUpstreamManifests(ctx, true)
 
+		manifestCount := 0
 		resolver := upstreamsResolver{}
 		entryIdxMap := map[string]int{}
 		for mIdx := range manifests {
 			m := &manifests[mIdx]
+			if m.ID == "" {
+				continue
+			}
+			manifestCount++
 			for _, r := range m.Resources {
 				if r.Name == stremio.ResourceNameAddonCatalog || r.Name == stremio.ResourceNameCatalog {
 					continue
@@ -287,9 +309,18 @@ func (ud UserData) getUpstreamsResolver(ctx *context.StoreContext) (upstreamsRes
 			}
 		}
 
-		err := upstreamResolverCache.Add(eud, resolver)
-		if err != nil {
-			return nil, err
+		if err := errors.Join(errs...); err != nil {
+			if manifestCount == 0 {
+				return nil, err
+			}
+			log.Error("failed to fetch some upstream manifests", "error", err)
+			if err := upstreamResolverCache.AddWithLifetime(eud, resolver, 1*time.Hour); err != nil {
+				return nil, err
+			}
+		} else {
+			if err := upstreamResolverCache.Add(eud, resolver); err != nil {
+				return nil, err
+			}
 		}
 
 		ud.resolver = resolver
