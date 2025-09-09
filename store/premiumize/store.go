@@ -355,6 +355,8 @@ func (c *StoreClient) checkMagnet(params *store.CheckMagnetParams, includeLinkAn
 			Hash: hash,
 		}
 		if it, ok := itemByHash[hash]; ok {
+			item.Name = it.Name
+			item.Size = it.Size
 			tInfo.TorrentTitle = it.Name
 			tInfo.Size = it.Size
 			item.Status = it.Status
@@ -500,11 +502,8 @@ func (c *StoreClient) AddMagnet(params *store.AddMagnetParams) (*store.AddMagnet
 		}
 
 		name := magnet.Name
-		if len(cm.Files) > 0 {
-			parts := strings.SplitN(cm.Files[0].Path, "/", 3)
-			if len(parts) > 1 {
-				name = parts[1]
-			}
+		if cm.Name != "" {
+			name = cm.Name
 		}
 		data := &store.AddMagnetData{
 			Id:      id,
@@ -512,13 +511,16 @@ func (c *StoreClient) AddMagnet(params *store.AddMagnetParams) (*store.AddMagnet
 			Magnet:  magnet.Link,
 			Name:    name,
 			Status:  store.MagnetStatusDownloaded,
-			Size:    0,
+			Size:    cm.Size,
 			Files:   cm.Files,
 			AddedAt: time.Unix(0, 0).UTC(),
 		}
 
-		for i := range cm.Files {
-			data.Size += cm.Files[i].Size
+		if data.Size <= 0 {
+			data.Size = 0
+			for i := range cm.Files {
+				data.Size += cm.Files[i].Size
+			}
 		}
 
 		c.listMagnetsCache.Remove(c.getCacheKey(params, ""))
