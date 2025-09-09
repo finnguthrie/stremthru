@@ -195,6 +195,7 @@ func cleanupFilesWithNameAsPath(hash string, files Files) {
 				hash,
 			); err != nil {
 				log.Error("failed to cleanup files with name as path (migrate sid)", "error", err, "hash", hash, "fpath", f.Path, "sid", f.SId)
+				return
 			}
 		}
 
@@ -213,6 +214,7 @@ func cleanupFilesWithNameAsPath(hash string, files Files) {
 				hash,
 			); err != nil {
 				log.Error("failed to cleanup files with name as path (migrate asid)", "error", err, "hash", hash, "fpath", f.Path, "asid", f.ASId)
+				return
 			}
 		}
 	}
