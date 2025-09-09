@@ -545,8 +545,10 @@ Check magnet links.
         "files": [
           {
             "index": "int",
+            "path": "string",
             "name": "string",
             "size": "int"
+            "video_hash": "string"
           }
         ]
       }

@@ -321,11 +321,12 @@ func CheckMagnet(s store.Store, hashes []string, storeToken string, clientIp str
 								}
 								seenByName[key] = struct{}{}
 								files = append(files, torrent_stream.File{
-									Idx:    f.Idx,
-									Path:   f.Path,
-									Name:   f.Name,
-									Size:   f.Size,
-									Source: f.Source,
+									Idx:       f.Idx,
+									Path:      f.Path,
+									Name:      f.Name,
+									Size:      f.Size,
+									Source:    f.Source,
+									VideoHash: f.VideoHash,
 								})
 							}
 						}

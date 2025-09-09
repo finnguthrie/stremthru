@@ -87,11 +87,12 @@ func (arr Files) ToStoreMagnetFiles(hash string) []store.MagnetFile {
 		f := &arr[i]
 		f.Normalize()
 		files[i] = store.MagnetFile{
-			Idx:    f.Idx,
-			Path:   f.Path,
-			Name:   f.Name,
-			Size:   f.Size,
-			Source: f.Source,
+			Idx:       f.Idx,
+			Path:      f.Path,
+			Name:      f.Name,
+			Size:      f.Size,
+			Source:    f.Source,
+			VideoHash: f.VideoHash,
 		}
 		if !hasActualPath && strings.HasPrefix(f.Path, "/") {
 			hasActualPath = true
