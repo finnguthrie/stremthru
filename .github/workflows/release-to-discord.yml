@@ -1,0 +1,16 @@
+on:
+  release:
+    types: [published]
+
+jobs:
+  discord-release-announcement:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: GitHub Releases to Discord
+        uses: SethCohen/github-releases-to-discord@v1
+        with:
+          webhook_url: ${{ secrets.DISCORD_ANNOUNCEMENTS_WEBHOOK_URL }}
+          content: "|| <@&1415058746781995219> ||"
+          reduce_headings: true
