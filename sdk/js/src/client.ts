@@ -69,8 +69,10 @@ class StremThruStore {
       items: Array<{
         files: Array<{
           index: number;
-          name: string;
+          name?: string;
+          path: string;
           size: number;
+          video_hash?: string;
         }>;
         hash: string;
         magnet: string;
