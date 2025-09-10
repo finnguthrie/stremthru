@@ -60,6 +60,8 @@ func PullTorrentsByStremId(sid string, originInstanceId string) {
 			Source:       ti.TorrentInfoSource(data.Source),
 			Category:     ti.TorrentInfoCategory(data.Category),
 			Files:        data.Files,
+			Seeders:      data.Seeders,
+			Leechers:     data.Leechers,
 		}
 	}
 	ti.Upsert(items, "", false)
