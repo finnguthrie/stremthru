@@ -50,7 +50,7 @@ class StremThruStore {
         name: string;
         path: string;
         size: number;
-        video_hash: string;
+        video_hash?: string;
       }>;
       hash: string;
       id: string;
@@ -69,7 +69,7 @@ class StremThruStore {
       items: Array<{
         files: Array<{
           index: number;
-          name?: string;
+          name: string;
           path: string;
           size: number;
           video_hash?: string;
@@ -109,7 +109,7 @@ class StremThruStore {
         name: string;
         path: string;
         size: number;
-        video_hash: string;
+        video_hash?: string;
       }>;
       hash: string;
       id: string;
