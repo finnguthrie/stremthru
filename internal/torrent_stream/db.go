@@ -176,7 +176,7 @@ var query_cleanup_files_with_name_as_path = fmt.Sprintf(
 func cleanupFilesWithNameAsPath(hash string, files Files) {
 	for i := range files {
 		f := &files[i]
-		if strings.HasPrefix(f.Path, "/") {
+		if strings.HasPrefix(f.Path, "/") || f.Path == "" {
 			continue
 		}
 
@@ -418,6 +418,10 @@ func Record(items []InsertData, discardIdx bool) error {
 		args := make([]any, 0, count*7)
 		for i := range cItems {
 			item := &cItems[i]
+			if item.Path == "" {
+				continue
+			}
+
 			idx := item.Idx
 			if discardIdx && item.Source != "dht" {
 				idx = -1
