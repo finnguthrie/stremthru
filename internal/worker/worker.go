@@ -199,11 +199,16 @@ func NewWorker(conf *WorkerConfig) *Worker {
 		ErrFunc: func(err error) {
 			log.Error("Worker Failure", "error", err)
 
+			defer func() {
+				if perr, stack := util.HandlePanic(recover(), true); perr != nil {
+					log.Error("Worker Err Panic", "error", perr, "stack", stack)
+				}
+				jobId = ""
+			}()
+
 			if terr := jobTracker.Set(jobId, "failed", err.Error(), nil); terr != nil {
 				log.Error("failed to set job status", "error", terr, "jobId", jobId, "status", "failed")
 			}
-
-			jobId = ""
 		},
 	})
 

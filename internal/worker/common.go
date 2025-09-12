@@ -58,7 +58,10 @@ func (t JobTracker[T]) GetLast() (*kv.ParsedKV[Job[T]], error) {
 	if err != nil {
 		return nil, err
 	}
-	return kv, err
+	if kv != nil && kv.Key == "" {
+		return nil, t.kv.Del(kv.Key)
+	}
+	return kv, nil
 }
 
 func (t JobTracker[T]) Set(id string, status string, err string, data *T) error {
