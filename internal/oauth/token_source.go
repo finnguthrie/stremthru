@@ -2,8 +2,10 @@ package oauth
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
+	"github.com/MunifTanjim/stremthru/internal/db"
 	"golang.org/x/oauth2"
 )
 
@@ -33,6 +35,29 @@ func (ts *dbTokenSource) Token() (*oauth2.Token, error) {
 		return ts.tok, nil
 	}
 
+	// db level advisory lock to prevent race condition in multi-node deployment
+	if lock := db.NewAdvisoryLock("oauth", "token", ts.TokenId); lock == nil {
+		return nil, errors.New("failed to create advisory lock")
+	} else if !lock.Acquire() {
+		return nil, errors.New("failed to acquire advisory lock")
+	} else {
+		defer lock.Release()
+	}
+
+	// read from db, in case already refreshed token exists
+	otok, err := GetOAuthTokenById(ts.TokenId)
+	if err != nil {
+		return nil, err
+	}
+	if otok == nil {
+		return nil, errors.New("invalid id, token not found")
+	}
+
+	ts.tok = otok.ToToken()
+	if ts.tok.Valid() {
+		return ts.tok, nil
+	}
+
 	tokenSourceLog.Debug("token expired, refreshing token", "provider", ts.config.Provider, "user_id", ts.tok.Extra("user_id"), "user_name", ts.tok.Extra("user_name"))
 	tok, err := ts.TokenSource.Token()
 	if err != nil {
@@ -47,9 +72,9 @@ func (ts *dbTokenSource) Token() (*oauth2.Token, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	ts.tok = ts.config.PrepareToken(tok, ts.TokenId, userId, userName)
-	err = ts.save()
-	if err != nil {
+	if err := ts.save(); err != nil {
 		return nil, err
 	}
 
