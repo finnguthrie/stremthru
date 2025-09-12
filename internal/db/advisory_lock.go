@@ -5,6 +5,7 @@ import (
 	"hash/crc32"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/MunifTanjim/stremthru/internal/logger"
 )
@@ -29,9 +30,29 @@ type AdvisoryLock interface {
 
 type sqliteAdvisoryLock struct {
 	Executor
-	name  string
-	count int
-	m     sync.Mutex
+	name   string
+	locked bool
+	m      sync.Mutex
+}
+
+var sqliteAdvisoryLockByName sync.Map
+
+func (l *sqliteAdvisoryLock) lock() bool {
+	l.m.Lock()
+	defer l.m.Unlock()
+	if !l.locked {
+		l.locked = true
+	}
+	return l.locked
+}
+
+func (l *sqliteAdvisoryLock) unlock() bool {
+	l.m.Lock()
+	defer l.m.Unlock()
+	if l.locked {
+		l.locked = false
+	}
+	return !l.locked
 }
 
 func (l *sqliteAdvisoryLock) GetName() string {
@@ -39,33 +60,24 @@ func (l *sqliteAdvisoryLock) GetName() string {
 }
 
 func (l *sqliteAdvisoryLock) Acquire() bool {
-	l.count++
-	// lockLog.Debug("acquired", "name", l.name, "count", l.count)
-	return true
+	tryLeft := 5
+	for tryLeft > 0 && !l.lock() {
+		tryLeft--
+		time.Sleep(1 * time.Second)
+	}
+	return l.locked
 }
 
 func (l *sqliteAdvisoryLock) TryAcquire() bool {
-	l.count++
-	// lockLog.Debug("acquired", "name", l.name, "count", l.count)
-	return true
+	return l.lock()
 }
 
 func (l *sqliteAdvisoryLock) Release() bool {
-	if l.count == 0 {
-		return false
-	}
-	l.count--
-	// lockLog.Debug("released", "name", l.name, "count", l.count)
-	return true
+	return l.unlock()
 }
 
 func (l *sqliteAdvisoryLock) ReleaseAll() bool {
-	if l.count == 0 {
-		return false
-	}
-	l.count = 0
-	// lockLog.Debug("released all", "name", l.name, "count", l.count)
-	return true
+	return l.Release()
 }
 
 func (l *sqliteAdvisoryLock) Err() error {
@@ -73,10 +85,13 @@ func (l *sqliteAdvisoryLock) Err() error {
 }
 
 func sqliteNewAdvisoryLock(names ...string) AdvisoryLock {
-	return &sqliteAdvisoryLock{
-		Executor: db,
-		name:     strings.Join(names, ":"),
+	name := strings.Join(names, ":")
+	if lock, ok := sqliteAdvisoryLockByName.Load(name); ok {
+		return lock.(*sqliteAdvisoryLock)
 	}
+	lock := &sqliteAdvisoryLock{Executor: db, name: name}
+	sqliteAdvisoryLockByName.Store(name, lock)
+	return lock
 }
 
 type postgresAdvisoryLock struct {
@@ -112,7 +127,6 @@ func (l *postgresAdvisoryLock) Acquire() bool {
 		return false
 	}
 	l.count++
-	// lockLog.Debug("acquired", "name", l.name, "count", l.count)
 	return true
 }
 
@@ -128,7 +142,6 @@ func (l *postgresAdvisoryLock) TryAcquire() bool {
 		return false
 	}
 	l.count++
-	// lockLog.Debug("try acquired", "name", l.name, "count", l.count)
 	return acquired
 }
 
@@ -148,7 +161,6 @@ func (l *postgresAdvisoryLock) Release() bool {
 		return false
 	}
 	l.count--
-	// lockLog.Debug("released", "name", l.name, "count", l.count)
 	if l.count == 0 {
 		l.commit()
 	}
@@ -169,7 +181,6 @@ func (l *postgresAdvisoryLock) ReleaseAll() bool {
 		lockLog.Error("release all failed", "name", l.name, "count", l.count)
 		return false
 	}
-	// lockLog.Debug("released all", "name", l.name, "count", l.count)
 	return true
 }
 
