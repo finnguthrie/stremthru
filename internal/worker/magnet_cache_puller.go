@@ -50,6 +50,7 @@ func InitMagnetCachePullerWorker(conf *WorkerConfig) *Worker {
 				}
 
 				filesByHash := map[string]torrent_stream.Files{}
+				cached := map[string]bool{}
 
 				storeToken := storeTokens[i%len(storeTokens)]
 				clientIp := clientIps[i%len(clientIps)]
@@ -74,6 +75,7 @@ func InitMagnetCachePullerWorker(conf *WorkerConfig) *Worker {
 					for _, item := range res.Data.Items {
 						files := torrent_stream.Files{}
 						if item.Status == store.MagnetStatusCached {
+							cached[item.Hash] = true
 							seenByName := map[string]bool{}
 							for _, f := range item.Files {
 								if _, seen := seenByName[f.Name]; seen {
@@ -94,7 +96,7 @@ func InitMagnetCachePullerWorker(conf *WorkerConfig) *Worker {
 					}
 				}
 
-				magnet_cache.BulkTouch(s.GetName().Code(), filesByHash, false)
+				magnet_cache.BulkTouch(s.GetName().Code(), filesByHash, cached, false)
 			}
 
 			return nil

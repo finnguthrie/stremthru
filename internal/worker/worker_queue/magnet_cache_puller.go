@@ -25,5 +25,5 @@ var MagnetCachePullerQueue = WorkerQueue[MagnetCachePullerQueueItem]{
 	transform: func(item *MagnetCachePullerQueueItem) *MagnetCachePullerQueueItem {
 		return item
 	},
-	Disabled: !config.LazyPeer,
+	Disabled: !config.PeerFlag.Lazy,
 }

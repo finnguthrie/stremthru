@@ -126,7 +126,7 @@ var query_bulk_touch_on_conflict = fmt.Sprintf(
 	db.CurrentTimestamp,
 )
 
-func BulkTouch(storeCode store.StoreCode, filesByHash map[string]torrent_stream.Files, skipFileTracking bool) {
+func BulkTouch(storeCode store.StoreCode, filesByHash map[string]torrent_stream.Files, cached map[string]bool, skipFileTracking bool) {
 	var hit_query strings.Builder
 	hit_query.WriteString(query_bulk_touch_before_values)
 	hit_placeholder := "(?,?,true)"
@@ -140,8 +140,18 @@ func BulkTouch(storeCode store.StoreCode, filesByHash map[string]torrent_stream.
 	var hit_args []any
 	var miss_args []any
 
+	if cached == nil {
+		cached = map[string]bool{}
+	}
+
 	for hash, files := range filesByHash {
-		if len(files) == 0 {
+		if len(files) > 0 {
+			cached[hash] = true
+		}
+	}
+
+	for hash, is_cached := range cached {
+		if !is_cached {
 			if miss_count > 0 {
 				miss_query.WriteString(",")
 			}

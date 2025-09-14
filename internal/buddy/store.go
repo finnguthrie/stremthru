@@ -100,8 +100,8 @@ func TrackMagnet(s store.Store, hash string, name string, size int64, files []st
 
 type TorrentInfoInput = torrent_info.TorrentInfoInsertData
 
-func BulkTrackMagnet(s store.Store, tInfos []TorrentInfoInput, tInfoCategory torrent_info.TorrentInfoCategory, storeToken string) {
-	if len(tInfos) == 0 {
+func BulkTrackMagnet(s store.Store, tInfos []TorrentInfoInput, cached map[string]bool, tInfoCategory torrent_info.TorrentInfoCategory, storeToken string) {
+	if len(tInfos) == 0 && len(cached) == 0 {
 		return
 	}
 
@@ -115,7 +115,7 @@ func BulkTrackMagnet(s store.Store, tInfos []TorrentInfoInput, tInfoCategory tor
 		}
 		filesByHash[tInfo.Hash] = tInfo.Files
 	}
-	magnet_cache.BulkTouch(s.GetName().Code(), filesByHash, true)
+	magnet_cache.BulkTouch(s.GetName().Code(), filesByHash, cached, true)
 	go torrent_info.Upsert(tInfos, tInfoCategory, storeCode != store.StoreCodeRealDebrid)
 
 	if config.HasBuddy {
@@ -137,6 +137,7 @@ func BulkTrackMagnet(s store.Store, tInfos []TorrentInfoInput, tInfoCategory tor
 			StoreToken:          storeToken,
 			TorrentInfoCategory: tInfoCategory,
 			TorrentInfos:        tInfos,
+			Cached:              cached,
 		}
 		go func() {
 			start := time.Now()
@@ -213,6 +214,7 @@ func CheckMagnet(s store.Store, hashes []string, storeToken string, clientIp str
 		} else {
 			buddyLog.Info("check magnet", "store", s.GetName(), "hash_count", len(staleOrMissingHashes), "duration", duration)
 			filesByHash := map[string]torrent_stream.Files{}
+			cached := map[string]bool{}
 			for _, item := range res.Data.Items {
 				res_item := store.CheckMagnetDataItem{
 					Hash:   item.Hash,
@@ -222,6 +224,7 @@ func CheckMagnet(s store.Store, hashes []string, storeToken string, clientIp str
 				res_files := []store.MagnetFile{}
 				files := torrent_stream.Files{}
 				if item.Status == store.MagnetStatusCached {
+					cached[item.Hash] = true
 					seenByName := map[string]struct{}{}
 					for _, f := range item.Files {
 						key := f.Path
@@ -254,13 +257,13 @@ func CheckMagnet(s store.Store, hashes []string, storeToken string, clientIp str
 				data.Items = append(data.Items, res_item)
 				filesByHash[item.Hash] = files
 			}
-			go magnet_cache.BulkTouch(s.GetName().Code(), filesByHash, false)
+			go magnet_cache.BulkTouch(s.GetName().Code(), filesByHash, cached, false)
 			return data, nil
 		}
 	}
 
 	if config.HasPeer {
-		if config.LazyPeer {
+		if config.PeerFlag.Lazy {
 			storeCode := string(s.GetName().Code())
 			for _, hash := range staleOrMissingHashes {
 				worker_queue.MagnetCachePullerQueue.Queue(worker_queue.MagnetCachePullerQueueItem{
@@ -337,7 +340,7 @@ func CheckMagnet(s store.Store, hashes []string, storeToken string, clientIp str
 			}()
 		}
 		wg.Wait()
-		go magnet_cache.BulkTouch(s.GetName().Code(), filesByHash, false)
+		go magnet_cache.BulkTouch(s.GetName().Code(), filesByHash, nil, false)
 		return data, nil
 	}
 

@@ -319,6 +319,11 @@ func parseStoreContentCachedStaleTime(staleTimeConfig string) (staleTimeMap stor
 	return staleTimeMap, nil
 }
 
+type configPeerFlag struct {
+	Lazy        bool
+	NoSpillTorz bool
+}
+
 type Config struct {
 	LogLevel  slog.Level
 	LogFormat string
@@ -332,8 +337,8 @@ type Config struct {
 	HasBuddy                    bool
 	PeerURL                     string
 	PeerAuthToken               string
+	PeerFlag                    configPeerFlag
 	HasPeer                     bool
-	LazyPeer                    bool
 	PullPeerURL                 string
 	RedisURI                    string
 	DatabaseURI                 string
@@ -516,7 +521,25 @@ var config = func() Config {
 		log.Fatalf("failed to parse store content cached stale time: %v", err)
 	}
 
+	// @deprecated
 	lazyPeer := strings.ToLower(getEnv("STREMTHRU_LAZY_PEER"))
+
+	peerFlag := configPeerFlag{}
+	for _, flag := range strings.FieldsFunc(getEnv("STREMTHRU_PEER_FLAG"), func(c rune) bool {
+		return c == ','
+	}) {
+		switch flag {
+		case "lazy":
+			peerFlag.Lazy = true
+		case "no_spill_torz":
+			peerFlag.NoSpillTorz = true
+		}
+	}
+
+	if lazyPeer == "1" || lazyPeer == "true" {
+		log.Println("WARNING: STREMTHRU_LAZY_PEER is deprecated, use STREMTHRU_PEER_FLAG=lazy instead")
+		peerFlag.Lazy = true
+	}
 
 	return Config{
 		LogLevel:  logLevel,
@@ -531,8 +554,8 @@ var config = func() Config {
 		HasBuddy:                    len(buddyUrl) > 0,
 		PeerURL:                     peerUrl,
 		PeerAuthToken:               peerAuthToken,
+		PeerFlag:                    peerFlag,
 		HasPeer:                     len(peerUrl) > 0,
-		LazyPeer:                    lazyPeer == "1" || lazyPeer == "true",
 		PullPeerURL:                 pullPeerUrl,
 		RedisURI:                    getEnv("STREMTHRU_REDIS_URI"),
 		DatabaseURI:                 databaseUri,
@@ -562,8 +585,8 @@ var BuddyURL = config.BuddyURL
 var HasBuddy = config.HasBuddy
 var PeerURL = config.PeerURL
 var PeerAuthToken = config.PeerAuthToken
+var PeerFlag = config.PeerFlag
 var HasPeer = config.HasPeer
-var LazyPeer = config.LazyPeer
 var PullPeerURL = config.PullPeerURL
 var RedisURI = config.RedisURI
 var DatabaseURI = config.DatabaseURI
@@ -739,11 +762,20 @@ func PrintConfig(state *AppState) {
 			l.Panicf(" Invalid Peer URI: %v\n", err)
 		}
 		u.User = url.UserPassword("", PeerAuthToken)
-		lazyPeer := ""
-		if LazyPeer {
-			lazyPeer = " (lazy)"
+		peerFlags := ""
+		if PeerFlag.Lazy {
+			peerFlags = "lazy"
 		}
-		l.Println(" Peer URI" + lazyPeer + ":")
+		if PeerFlag.NoSpillTorz {
+			if peerFlags != "" {
+				peerFlags += ","
+			}
+			peerFlags += "no_spill_torz"
+		}
+		if peerFlags != "" {
+			peerFlags = " (" + peerFlags + ")"
+		}
+		l.Println(" Peer URI" + peerFlags + ":")
 		l.Println("   " + u.Redacted())
 		l.Println()
 	}

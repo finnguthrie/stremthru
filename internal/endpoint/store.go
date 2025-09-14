@@ -57,16 +57,8 @@ func checkMagnet(ctx *context.StoreContext, magnets []string, sid string, localO
 
 type TrackMagnetPayload struct {
 	TorrentInfoCategory torrent_info.TorrentInfoCategory `json:"tinfo_category"`
-
-	// single
-	Hash   string             `json:"hash"`
-	Name   string             `json:"name"`
-	Size   int64              `json:"size"`
-	Files  []store.MagnetFile `json:"files"`
-	IsMiss bool               `json:"is_miss"`
-
-	// bulk
-	TorrentInfos []buddy.TorrentInfoInput `json:"tinfos"`
+	TorrentInfos        []buddy.TorrentInfoInput         `json:"tinfos"`
+	Cached              map[string]bool                  `json:"cached"`
 }
 
 type TrackMagnetData struct {
@@ -99,11 +91,7 @@ func hadleStoreMagnetsTrack(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if payload.Hash != "" {
-		go buddy.TrackMagnet(ctx.Store, payload.Hash, payload.Name, payload.Size, payload.Files, payload.TorrentInfoCategory, payload.IsMiss, ctx.StoreAuthToken)
-	} else {
-		go buddy.BulkTrackMagnet(ctx.Store, payload.TorrentInfos, payload.TorrentInfoCategory, ctx.StoreAuthToken)
-	}
+	go buddy.BulkTrackMagnet(ctx.Store, payload.TorrentInfos, payload.Cached, payload.TorrentInfoCategory, ctx.StoreAuthToken)
 
 	SendResponse(w, r, 202, &TrackMagnetData{}, nil)
 }

@@ -198,19 +198,11 @@ func (c APIClient) CheckMagnet(params *CheckMagnetParams) (request.APIResponse[s
 
 type TrackMagnetParams struct {
 	store.Ctx
-	StoreName           store.StoreName                  `json:"-"`
-	StoreToken          string                           `json:"-"`
-	TorrentInfoCategory torrent_info.TorrentInfoCategory `json:"tinfo_category"`
-
-	// single
-	Hash   string             `json:"hash"`
-	Name   string             `json:"name"`
-	Size   int64              `json:"size"`
-	Files  []store.MagnetFile `json:"files"`
-	IsMiss bool               `json:"is_miss"`
-
-	// bulk
-	TorrentInfos []torrent_info.TorrentInfoInsertData `json:"tinfos"`
+	StoreName           store.StoreName                      `json:"-"`
+	StoreToken          string                               `json:"-"`
+	TorrentInfoCategory torrent_info.TorrentInfoCategory     `json:"tinfo_category"`
+	TorrentInfos        []torrent_info.TorrentInfoInsertData `json:"tinfos"`
+	Cached              map[string]bool                      `json:"cached"`
 }
 
 type TrackMagnetData struct{}
@@ -219,6 +211,18 @@ func (c APIClient) TrackMagnet(params *TrackMagnetParams) (request.APIResponse[T
 	params.Headers = &http.Header{
 		"X-StremThru-Store-Name":          []string{string(params.StoreName)},
 		"X-StremThru-Store-Authorization": []string{"Bearer " + params.StoreToken},
+	}
+	if config.PeerFlag.NoSpillTorz {
+		if params.Cached == nil {
+			params.Cached = map[string]bool{}
+		}
+		for i := range params.TorrentInfos {
+			tInfo := &params.TorrentInfos[i]
+			if len(tInfo.Files) > 0 {
+				params.Cached[tInfo.Hash] = true
+			}
+		}
+		params.TorrentInfos = nil
 	}
 	params.JSON = params
 

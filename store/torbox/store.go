@@ -229,7 +229,7 @@ func (c *StoreClient) CheckMagnet(params *store.CheckMagnetParams) (*store.Check
 		tInfos = append(tInfos, tInfo)
 		data.Items = append(data.Items, item)
 	}
-	go buddy.BulkTrackMagnet(c, tInfos, "", params.GetAPIKey(c.client.apiKey))
+	go buddy.BulkTrackMagnet(c, tInfos, nil, "", params.GetAPIKey(c.client.apiKey))
 	return data, nil
 }
 

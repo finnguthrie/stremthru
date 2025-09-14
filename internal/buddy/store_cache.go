@@ -67,6 +67,7 @@ type TrackMagnetCacheParams struct {
 
 	// bulk
 	FilesByHash map[string]torrent_stream.Files `json:"files_by_hash"`
+	Cached      map[string]bool                 `json:"cached"`
 }
 
 func (c APIClient) TrackMagnetCache(params *TrackMagnetCacheParams) (APIResponse[TrackMagnetCacheData], error) {
