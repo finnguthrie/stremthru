@@ -106,7 +106,7 @@ func (kv *SQLKVStore[V]) List() ([]ParsedKV[V], error) {
 		if err := rows.Scan(&kv.Key, &kv.Value, &kv.CreatedAt, &kv.UpdatedAt, &kv.ExpiresAt); err != nil {
 			return nil, err
 		}
-		if !kv.ExpiresAt.IsZero() && kv.ExpiresAt.Before(now) {
+		if kv.Key == "" || (!kv.ExpiresAt.IsZero() && kv.ExpiresAt.Before(now)) {
 			keysToDelete = append(keysToDelete, kv.Key)
 			continue
 		}
