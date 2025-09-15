@@ -1,6 +1,7 @@
 package stremio_torz
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -89,10 +90,28 @@ func handleStrem(w http.ResponseWriter, r *http.Request) {
 		amParams.APIKey = ctx.StoreAuthToken
 		amRes, err := ctx.Store.AddMagnet(amParams)
 		if err != nil {
-			return &stremResult{
+			result := &stremResult{
 				error_log:   "failed to add magnet",
-				error_video: "download_failed",
-			}, err
+				error_video: store_video.StoreVideoNameDownloadFailed,
+			}
+			var uerr *core.UpstreamError
+			if errors.As(err, &uerr) {
+				switch uerr.Code {
+				case core.ErrorCodeUnauthorized:
+					result.error_log = "unauthorized"
+					result.error_video = store_video.StoreVideoName401
+				case core.ErrorCodeTooManyRequests:
+					result.error_log = "too many requests"
+					result.error_video = store_video.StoreVideoName429
+				case core.ErrorCodePaymentRequired:
+					result.error_log = "payment required"
+					result.error_video = store_video.StoreVideoNamePaymentRequired
+				case core.ErrorCodeStoreLimitExceeded:
+					result.error_log = "store limit exceeded"
+					result.error_video = store_video.StoreVideoNameStoreLimitExceeded
+				}
+			}
+			return result, err
 		}
 
 		magnet := &store.GetMagnetData{
@@ -114,12 +133,13 @@ func handleStrem(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			strem := &stremResult{
 				error_log:   "failed wait for magnet status",
-				error_video: "500",
+				error_video: store_video.StoreVideoName500,
 			}
-			if magnet.Status == store.MagnetStatusQueued || magnet.Status == store.MagnetStatusDownloading || magnet.Status == store.MagnetStatusProcessing {
-				strem.error_video = "downloading"
-			} else if magnet.Status == store.MagnetStatusFailed || magnet.Status == store.MagnetStatusInvalid || magnet.Status == store.MagnetStatusUnknown {
-				strem.error_video = "download_failed"
+			switch magnet.Status {
+			case store.MagnetStatusQueued, store.MagnetStatusDownloading, store.MagnetStatusProcessing:
+				strem.error_video = store_video.StoreVideoNameDownloading
+			case store.MagnetStatusFailed, store.MagnetStatusInvalid, store.MagnetStatusUnknown:
+				strem.error_video = store_video.StoreVideoNameDownloadFailed
 			}
 			return strem, err
 		}
@@ -164,7 +184,7 @@ func handleStrem(w http.ResponseWriter, r *http.Request) {
 		if link == "" {
 			return &stremResult{
 				error_log:   "no matching file found for (" + sid + " - " + magnet.Hash + ")",
-				error_video: "no_matching_file",
+				error_video: store_video.StoreVideoNameNoMatchingFile,
 			}, nil
 		}
 
@@ -180,7 +200,7 @@ func handleStrem(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return &stremResult{
 				error_log:   "failed to generate stremthru link",
-				error_video: "500",
+				error_video: store_video.StoreVideoName500,
 			}, err
 		}
 

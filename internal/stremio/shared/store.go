@@ -55,7 +55,7 @@ func WaitForMagnetStatus(ctx *context.StoreContext, m *store.GetMagnetData, stat
 		retry++
 	}
 	if m.Status != status {
-		error := core.NewStoreError("torrent failed to reach status: " + string(status))
+		error := core.NewStoreError("torrent failed to reach status: " + string(status) + ", last status: " + string(m.Status))
 		error.StoreName = string(ctx.Store.GetName())
 		return m, error
 	}

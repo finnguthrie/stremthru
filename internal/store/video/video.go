@@ -45,11 +45,14 @@ const (
 	StoreVideoName200                      StoreVideoName = "200"
 	StoreVideoName401                      StoreVideoName = "401"
 	StoreVideoName403                      StoreVideoName = "403"
+	StoreVideoName429                      StoreVideoName = "429"
 	StoreVideoName500                      StoreVideoName = "500"
 	StoreVideoNameContentProxyLimitReached StoreVideoName = "content_proxy_limit_reached"
 	StoreVideoNameDownloadFailed           StoreVideoName = "download_failed"
 	StoreVideoNameDownloading              StoreVideoName = "downloading"
 	StoreVideoNameNoMatchingFile           StoreVideoName = "no_matching_file"
+	StoreVideoNameStoreLimitExceeded       StoreVideoName = "store_limit_exceeded"
+	StoreVideoNamePaymentRequired          StoreVideoName = "payment_required"
 )
 
 func GetLink(name StoreVideoName, r *http.Request) string {

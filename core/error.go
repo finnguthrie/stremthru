@@ -106,12 +106,12 @@ func (e *Error) LogValue() slog.Value {
 	return slog.GroupValue(attrs...)
 }
 
-func (e *Error) Error() string {
+func (e Error) Error() string {
 	ret, _ := json.Marshal(e)
 	return string(ret)
 }
 
-func (e *Error) Unwrap() error {
+func (e Error) Unwrap() error {
 	return e.Cause
 }
 
