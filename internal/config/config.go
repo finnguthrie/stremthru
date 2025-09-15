@@ -815,16 +815,22 @@ func PrintConfig(state *AppState) {
 		}
 		l.Println("   - " + feature + disabled)
 		switch feature {
+		case FeatureStremioList:
+			l.Println("       public max list count: " + strconv.Itoa(Stremio.List.PublicMaxListCount))
 		case FeatureStremioTorz:
+			l.Println("      public max store count: " + strconv.Itoa(Stremio.Torz.PublicMaxStoreCount))
 			if Stremio.Torz.LazyPull {
 				l.Println("      [lazy pull]")
 			}
+		case FeatureStremioWrap:
+			l.Println("   public max upstream count: " + strconv.Itoa(Stremio.Wrap.PublicMaxUpstreamCount))
+			l.Println("      public max store count: " + strconv.Itoa(Stremio.Wrap.PublicMaxStoreCount))
 		}
 	}
 	l.Println()
 
 	l.Println(" Integrations:")
-	for _, integration := range []string{"anilist.co", "github.com", "kitsu.app", "letterboxd.com", "mdblist.com", "themoviedb.org", "trakt.tv", "thetvdb.com"} {
+	for _, integration := range []string{"anilist.co", "bitmagnet.io", "github.com", "kitsu.app", "letterboxd.com", "mdblist.com", "themoviedb.org", "trakt.tv", "thetvdb.com"} {
 		switch integration {
 		case "anilist.co":
 			disabled := ""
@@ -834,6 +840,12 @@ func PrintConfig(state *AppState) {
 			l.Println("   - " + integration + disabled)
 			if disabled == "" {
 				l.Println("       list stale time: " + Integration.AniList.ListStaleTime.String())
+			}
+		case "bitmagnet.io":
+			if Integration.Bitmagnet.IsEnabled() {
+				l.Println("   - " + integration)
+				l.Println("              base_url: " + Integration.Bitmagnet.BaseURL.String())
+				l.Println("          database_uri: " + util.MustParseURL(Integration.Bitmagnet.DatabaseURI).Redacted())
 			}
 		case "github.com":
 			disabled := ""
