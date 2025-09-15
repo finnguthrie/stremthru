@@ -695,9 +695,11 @@ var query_upsert_on_conflict = fmt.Sprintf(
 		Column.Category,
 	),
 	fmt.Sprintf(
-		"%s = CASE WHEN EXCLUDED.%s = 'dht' THEN EXCLUDED.%s ELSE ti.%s END",
+		"%s = CASE WHEN EXCLUDED.%s = 'dht' OR (ti.%s != 'dht' AND EXCLUDED.%s > 0) THEN EXCLUDED.%s ELSE ti.%s END",
 		Column.Seeders,
 		Column.Source,
+		Column.Source,
+		Column.Seeders,
 		Column.Seeders,
 		Column.Seeders,
 	),

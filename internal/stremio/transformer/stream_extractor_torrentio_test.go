@@ -27,8 +27,9 @@ func TestStreamExtractorTorrentioTorrent(t *testing.T) {
 					Filename:   "Deadpool.2016.UHD.BluRay.2160p.TrueHD.Atmos.7.1.DV.HEVC.HYBRiD.REMUX-FraMeSToR.mkv",
 				},
 			}, StreamExtractorResult{
-				Hash:   "e4f5d7a2f3dd6b7b1826bd77e316b6b5ba31eb72",
-				TTitle: "Deadpool.2016.UHD.BluRay.2160p.TrueHD.Atmos.7.1.DV.HEVC.HYBRiD.REMUX-FraMeSToR",
+				Hash:    "e4f5d7a2f3dd6b7b1826bd77e316b6b5ba31eb72",
+				TTitle:  "Deadpool.2016.UHD.BluRay.2160p.TrueHD.Atmos.7.1.DV.HEVC.HYBRiD.REMUX-FraMeSToR",
+				Seeders: 47,
 				Result: &ptt.Result{
 					Codec:      "HEVC",
 					HDR:        []string{"DV"},
@@ -60,8 +61,9 @@ func TestStreamExtractorTorrentioTorrent(t *testing.T) {
 					Filename:   "A Simple Favor 2018 DVDRip x264 ESub [MW].mkv",
 				},
 			}, StreamExtractorResult{
-				Hash:   "387ccd318d583405bbadcec55b9b05029645dd1d",
-				TTitle: "A Simple Favor 2018 DVDRip x264 ESub [MW]",
+				Hash:    "387ccd318d583405bbadcec55b9b05029645dd1d",
+				TTitle:  "A Simple Favor 2018 DVDRip x264 ESub [MW]",
+				Seeders: 5,
 				Result: &ptt.Result{
 					Codec:   "AVC",
 					Quality: "DVDRip",
@@ -91,8 +93,9 @@ func TestStreamExtractorTorrentioTorrent(t *testing.T) {
 					Filename:   "08 Deadpool - Action 2016 Eng Rus Multi-Subs 1080p [H264-mp4].mp4",
 				},
 			}, StreamExtractorResult{
-				Hash:   "a6a80257d62e53e55c877a7067ea5055129b462c",
-				TTitle: "X-Men Complete 13 Movie Collection Sci-Fi 2000 - 2020 Eng Rus Multi-Subs 1080p [H264-mp4]",
+				Hash:    "a6a80257d62e53e55c877a7067ea5055129b462c",
+				TTitle:  "X-Men Complete 13 Movie Collection Sci-Fi 2000 - 2020 Eng Rus Multi-Subs 1080p [H264-mp4]",
+				Seeders: 20,
 				Result: &ptt.Result{
 					Codec:      "AVC",
 					Languages:  []string{"msub", "en", "ru", "fi"},
@@ -122,8 +125,9 @@ func TestStreamExtractorTorrentioTorrent(t *testing.T) {
 					BingeGroup: "torrentio|1080p|h264",
 				},
 			}, StreamExtractorResult{
-				Hash:   "a6a80257d62e53e55c877a7067ea5055129b462c",
-				TTitle: "X-Men Complete 13 Movie Collection Sci-Fi 2000 - 2020 Eng Rus Multi-Subs 1080p [H264-mp4]",
+				Hash:    "a6a80257d62e53e55c877a7067ea5055129b462c",
+				TTitle:  "X-Men Complete 13 Movie Collection Sci-Fi 2000 - 2020 Eng Rus Multi-Subs 1080p [H264-mp4]",
+				Seeders: 20,
 				Result: &ptt.Result{
 					Codec:      "AVC",
 					Languages:  []string{"msub", "en", "ru", "fi"},
@@ -152,8 +156,9 @@ func TestStreamExtractorTorrentioTorrent(t *testing.T) {
 					BingeGroup: "torrentio|720p|BluRay|x264",
 				},
 			}, StreamExtractorResult{
-				Hash:   "f5d0ab292f5a244a4b38efac9ae1f8d311179588",
-				TTitle: "Deadpool (2016) 720p BluRay x264 [Dual Audio] [Hindi (Line Audio) - English] ESubs - Downloadhub",
+				Hash:    "f5d0ab292f5a244a4b38efac9ae1f8d311179588",
+				TTitle:  "Deadpool (2016) 720p BluRay x264 [Dual Audio] [Hindi (Line Audio) - English] ESubs - Downloadhub",
+				Seeders: 3,
 				Result: &ptt.Result{
 					Codec:      "AVC",
 					Languages:  []string{"daud", "en", "hi"},
@@ -199,8 +204,9 @@ func TestStreamExtractorTorrentioDebrid(t *testing.T) {
 					Filename:   "Deadpool [2016] 2160p Hybrid UHD BDRip DV HDR10 x265 TrueHD Atmos 7.1 Kira [SEV].mkv",
 				},
 			}, StreamExtractorResult{
-				Hash:   "c35ec8ad9f613d73782a898bece969efd6b98e0c",
-				TTitle: "Deadpool [2016] 2160p Hybrid UHD BDRip DV HDR10 x265 TrueHD Atmos 7.1 Kira [SEV]",
+				Hash:    "c35ec8ad9f613d73782a898bece969efd6b98e0c",
+				TTitle:  "Deadpool [2016] 2160p Hybrid UHD BDRip DV HDR10 x265 TrueHD Atmos 7.1 Kira [SEV]",
+				Seeders: 16,
 				Result: &ptt.Result{
 					BitDepth:   "10bit",
 					Codec:      "HEVC",
@@ -237,8 +243,9 @@ func TestStreamExtractorTorrentioDebrid(t *testing.T) {
 					Filename:   "08 Deadpool - Action 2016 Eng Rus Multi-Subs 1080p [H264-mp4].mp4",
 				},
 			}, StreamExtractorResult{
-				Hash:   "a6a80257d62e53e55c877a7067ea5055129b462c",
-				TTitle: "X-Men Complete 13 Movie Collection Sci-Fi 2000 - 2020 Eng Rus Multi-Subs 1080p [H264-mp4]",
+				Hash:    "a6a80257d62e53e55c877a7067ea5055129b462c",
+				TTitle:  "X-Men Complete 13 Movie Collection Sci-Fi 2000 - 2020 Eng Rus Multi-Subs 1080p [H264-mp4]",
+				Seeders: 20,
 				Result: &ptt.Result{
 					Codec:      "AVC",
 					Languages:  []string{"msub", "en", "ru", "fi"},
@@ -272,8 +279,9 @@ func TestStreamExtractorTorrentioDebrid(t *testing.T) {
 					BingeGroup: "torrentio|720p|BluRay|x264",
 				},
 			}, StreamExtractorResult{
-				Hash:   "f5d0ab292f5a244a4b38efac9ae1f8d311179588",
-				TTitle: "Deadpool (2016) 720p BluRay x264 [Dual Audio] [Hindi (Line Audio) - English] ESubs - Downloadhub",
+				Hash:    "f5d0ab292f5a244a4b38efac9ae1f8d311179588",
+				TTitle:  "Deadpool (2016) 720p BluRay x264 [Dual Audio] [Hindi (Line Audio) - English] ESubs - Downloadhub",
+				Seeders: 3,
 				Result: &ptt.Result{
 					Codec:      "AVC",
 					Languages:  []string{"daud", "en", "hi"},

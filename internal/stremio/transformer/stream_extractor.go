@@ -33,6 +33,7 @@ const (
 	StreamExtractorFieldHash          StreamExtractorField = "hash"
 	StreamExtractorFieldQuality       StreamExtractorField = "quality"
 	StreamExtractorFieldResolution    StreamExtractorField = "resolution"
+	StreamExtractorFieldSeeders       StreamExtractorField = "seeders"
 	StreamExtractorFieldSeason        StreamExtractorField = "season"
 	StreamExtractorFieldSite          StreamExtractorField = "site"
 	StreamExtractorFieldSize          StreamExtractorField = "size"
@@ -133,6 +134,7 @@ type StreamExtractorResult struct {
 	Hash     string
 	Raw      StreamExtractorResultRaw
 	Season   int
+	Seeders  int
 	Store    StreamExtractorResultStore
 	TTitle   string
 }
@@ -349,6 +351,10 @@ func (se StreamExtractor) Parse(stream *stremio.Stream, sType string) *StreamExt
 					case StreamExtractorFieldResolution:
 						if r.Resolution == "" {
 							r.Resolution = value
+						}
+					case StreamExtractorFieldSeeders:
+						if seeders, err := strconv.Atoi(value); err == nil {
+							r.Seeders = seeders
 						}
 					case StreamExtractorFieldSeason:
 						if season, err := strconv.Atoi(value); err == nil {

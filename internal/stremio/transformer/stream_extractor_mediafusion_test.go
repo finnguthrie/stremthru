@@ -62,8 +62,9 @@ func TestStreamExtractorMediaFusionTorrent(t *testing.T) {
 					VideoSize:  1031169664,
 				},
 			}, StreamExtractorResult{
-				Hash:   "2decf5e42220711acf7a2515ed14ee78f13413fe",
-				TTitle: "Deadpool 2016 x264 720p BluRay Eng Subs Dual Audio Hindi 5 1 English 5 1 Downloadhub",
+				Hash:    "2decf5e42220711acf7a2515ed14ee78f13413fe",
+				TTitle:  "Deadpool 2016 x264 720p BluRay Eng Subs Dual Audio Hindi 5 1 English 5 1 Downloadhub",
+				Seeders: 30,
 				Result: &ptt.Result{
 					Codec:      "AVC",
 					Quality:    "BluRay",

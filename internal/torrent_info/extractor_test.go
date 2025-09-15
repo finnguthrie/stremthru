@@ -29,6 +29,7 @@ func TestExtractorTorrentioTorrent(t *testing.T) {
 			}, TorrentInfoInsertData{
 				Hash:         "e4f5d7a2f3dd6b7b1826bd77e316b6b5ba31eb72",
 				TorrentTitle: "Deadpool.2016.UHD.BluRay.2160p.TrueHD.Atmos.7.1.DV.HEVC.HYBRiD.REMUX-FraMeSToR",
+				Seeders:      47,
 				Size:         -1,
 				Source:       "tio",
 				Files: []TorrentInfoInsertDataFile{
@@ -56,6 +57,7 @@ func TestExtractorTorrentioTorrent(t *testing.T) {
 			}, TorrentInfoInsertData{
 				Hash:         "a6a80257d62e53e55c877a7067ea5055129b462c",
 				TorrentTitle: "X-Men Complete 13 Movie Collection Sci-Fi 2000 - 2020 Eng Rus Multi-Subs 1080p [H264-mp4]",
+				Seeders:      20,
 				Size:         -1,
 				Source:       "tio",
 				Files: []TorrentInfoInsertDataFile{
@@ -82,6 +84,7 @@ func TestExtractorTorrentioTorrent(t *testing.T) {
 			}, TorrentInfoInsertData{
 				Hash:         "a6a80257d62e53e55c877a7067ea5055129b462c",
 				TorrentTitle: "X-Men Complete 13 Movie Collection Sci-Fi 2000 - 2020 Eng Rus Multi-Subs 1080p [H264-mp4]",
+				Seeders:      20,
 				Size:         -1,
 				Source:       "tio",
 				Files: []TorrentInfoInsertDataFile{
@@ -107,6 +110,7 @@ func TestExtractorTorrentioTorrent(t *testing.T) {
 			}, TorrentInfoInsertData{
 				Hash:         "f5d0ab292f5a244a4b38efac9ae1f8d311179588",
 				TorrentTitle: "Deadpool (2016) 720p BluRay x264 [Dual Audio] [Hindi (Line Audio) - English] ESubs - Downloadhub",
+				Seeders:      3,
 				Size:         -1,
 				Source:       "tio",
 			},
@@ -140,6 +144,7 @@ func TestExtractorTorrentioDebrid(t *testing.T) {
 			}, TorrentInfoInsertData{
 				Hash:         "e4f5d7a2f3dd6b7b1826bd77e316b6b5ba31eb72",
 				TorrentTitle: "Deadpool.2016.UHD.BluRay.2160p.TrueHD.Atmos.7.1.DV.HEVC.HYBRiD.REMUX-FraMeSToR",
+				Seeders:      47,
 				Size:         -1,
 				Source:       "tio",
 				Files: []TorrentInfoInsertDataFile{
@@ -166,6 +171,7 @@ func TestExtractorTorrentioDebrid(t *testing.T) {
 			}, TorrentInfoInsertData{
 				Hash:         "e4f5d7a2f3dd6b7b1826bd77e316b6b5ba31eb72",
 				TorrentTitle: "Deadpool.2016.UHD.BluRay.2160p.TrueHD.Atmos.7.1.DV.HEVC.HYBRiD.REMUX-FraMeSToR",
+				Seeders:      47,
 				Size:         -1,
 				Source:       "tio",
 				Files: []TorrentInfoInsertDataFile{
@@ -192,6 +198,7 @@ func TestExtractorTorrentioDebrid(t *testing.T) {
 			}, TorrentInfoInsertData{
 				Hash:         "a6a80257d62e53e55c877a7067ea5055129b462c",
 				TorrentTitle: "X-Men Complete 13 Movie Collection Sci-Fi 2000 - 2020 Eng Rus Multi-Subs 1080p [H264-mp4]",
+				Seeders:      20,
 				Size:         -1,
 				Source:       "tio",
 				Files: []TorrentInfoInsertDataFile{
@@ -217,6 +224,7 @@ func TestExtractorTorrentioDebrid(t *testing.T) {
 			}, TorrentInfoInsertData{
 				Hash:         "f5d0ab292f5a244a4b38efac9ae1f8d311179588",
 				TorrentTitle: "Deadpool (2016) 720p BluRay x264 [Dual Audio] [Hindi (Line Audio) - English] ESubs - Downloadhub",
+				Seeders:      3,
 				Size:         -1,
 				Source:       "tio",
 			},
@@ -278,6 +286,7 @@ func TestExtractorMediaFusionTorrent(t *testing.T) {
 			}, TorrentInfoInsertData{
 				Hash:         "2decf5e42220711acf7a2515ed14ee78f13413fe",
 				TorrentTitle: "Deadpool 2016 x264 720p BluRay Eng Subs Dual Audio Hindi 5 1 English 5 1 Downloadhub",
+				Seeders:      30,
 				Size:         -1,
 				Source:       "mfn",
 			},
@@ -394,6 +403,7 @@ func TestExtractorMediaFusionDebrid(t *testing.T) {
 			}, TorrentInfoInsertData{
 				Hash:         "2decf5e42220711acf7a2515ed14ee78f13413fe",
 				TorrentTitle: "Deadpool 2016 x264 720p BluRay Eng Subs Dual Audio Hindi 5 1 English 5 1 Downloadhub",
+				Seeders:      30,
 				Size:         -1,
 				Source:       "mfn",
 			},

@@ -12,6 +12,7 @@ import (
 )
 
 var torrentioStreamHashRegex = regexp.MustCompile(`(?i)\/([a-f0-9]{40})\/[^/]+\/(?:(\d+)|null|undefined)\/`)
+var torrentioStreamSeedersRegex = regexp.MustCompile(`👤 (\d+)`)
 var torrentioStreamSizeRegex = regexp.MustCompile(`💾 (?:([\d.]+ [^ ]+)|.+?)`)
 var torrentioDebridTrustedFileIndexRegex = regexp.MustCompile(`\[(?:RD|DL)`)
 
@@ -51,6 +52,9 @@ func extractInputFromTorrentioStream(data *TorrentInfoInsertData, sid string, st
 		data.Hash = stream.InfoHash
 		file.Idx = stream.FileIndex
 	}
+	if match := torrentioStreamSeedersRegex.FindStringSubmatch(description); len(match) > 1 {
+		data.Seeders = util.SafeParseInt(match[1], -1)
+	}
 	if match := torrentioStreamSizeRegex.FindStringSubmatch(description); len(match) > 1 {
 		file.Size = util.ToBytes(match[1])
 	}
@@ -62,6 +66,7 @@ func extractInputFromTorrentioStream(data *TorrentInfoInsertData, sid string, st
 }
 
 var mediafusionStreamHashRegex = regexp.MustCompile(`(?i)\/stream\/([a-f0-9]{40})(?:\/|$)`)
+var mediafusionStreamSeedersRegex = regexp.MustCompile(`👤 (\d+)`)
 var mediafusionStreamSizeRegex = regexp.MustCompile(`💾 ([\d.]+ [A-Z]B)(?: \/ 💾 ([\d.]+ [A-Z]B))?`)
 
 func extractInputFromMediaFusionStream(data *TorrentInfoInsertData, sid string, stream *stremio.Stream) *TorrentInfoInsertData {
@@ -95,7 +100,9 @@ func extractInputFromMediaFusionStream(data *TorrentInfoInsertData, sid string, 
 		data.Hash = stream.InfoHash
 		file.Idx = stream.FileIndex
 	}
-
+	if match := mediafusionStreamSeedersRegex.FindStringSubmatch(descriptionRest); len(match) > 1 {
+		data.Seeders = util.SafeParseInt(match[1], -1)
+	}
 	if match := mediafusionStreamSizeRegex.FindStringSubmatch(descriptionRest); len(match) > 0 {
 		if file.Size == -1 {
 			file.Size = util.ToBytes(match[1])

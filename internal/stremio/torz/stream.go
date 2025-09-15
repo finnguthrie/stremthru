@@ -127,9 +127,10 @@ func GetStreamsForHashes(stremType, stremId string, hashes []string) ([]WrappedS
 			return nil, err
 		}
 		data := &stremio_transformer.StreamExtractorResult{
-			Hash:   tInfo.Hash,
-			TTitle: tInfo.TorrentTitle,
-			Result: pttr,
+			Hash:    tInfo.Hash,
+			TTitle:  tInfo.TorrentTitle,
+			Result:  pttr,
+			Seeders: tInfo.Seeders,
 			Addon: stremio_transformer.StreamExtractorResultAddon{
 				Name: "Torz",
 			},

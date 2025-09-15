@@ -15,7 +15,7 @@ filename
 (?i)(?<codec>` + codecPattern + `)
 
 description
-^(?<t_title>.+)\n(?:(?<file_name>[^👤].+)\n)?👤.+ 💾 (?<size>.+) ⚙️ (?<site>\w+)(?:\n(?<language>[^\/]+(?:(?<language_sep>\/)[^\/]+)*))?$
+^(?<t_title>.+)\n(?:(?<file_name>[^👤].+)\n)?(?:👤 (?<seeders>\d+)) 💾 (?<size>.+) ⚙️ (?<site>\w+)(?:\n(?<language>[^\/]+(?:(?<language_sep>\/)[^\/]+)*))?$
 (?i)(?<quality>` + qualityPattern + `)
 
 url
