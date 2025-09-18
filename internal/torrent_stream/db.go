@@ -31,7 +31,7 @@ type File struct {
 }
 
 func (f *File) Normalize() {
-	if f.Name == "" {
+	if f.Name == "" && f.Path != "" {
 		f.Name = filepath.Base(f.Path)
 	}
 }
@@ -72,6 +72,9 @@ func (files *Files) Scan(value any) error {
 		return err
 	}
 	files.Normalize()
+	if len(*files) == 1 && (*files)[0].Path == "" {
+		*files = (*files)[:0]
+	}
 	return nil
 }
 
