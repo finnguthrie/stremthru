@@ -423,6 +423,12 @@ var executeTemplate = func() stremio_template.Executor[TemplateData] {
 							"/dave/list/official-top-250-narrative-feature-films/",
 						},
 					},
+					{
+						Pattern: "/{username}/watchlist/",
+						Examples: []string{
+							"/trippburton13/watchlist/",
+						},
+					},
 				},
 			})
 		}
@@ -511,6 +517,13 @@ var executeTemplate = func() stremio_template.Executor[TemplateData] {
 						Pattern: "/list/{list_id}",
 						Examples: []string{
 							"/list/28-best-picture-winners-the-academy-awards",
+						},
+					},
+					{
+						Pattern: "/company/{company_id}/{movie,tv}",
+						Examples: []string{
+							"/company/3-pixar/movie",
+							"/company/3268-hbo/tv",
 						},
 					},
 				},
