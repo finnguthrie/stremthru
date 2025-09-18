@@ -72,7 +72,9 @@ type ResultItem struct {
 	IMDB       string
 	InfoHash   string
 	Language   string
+	Leechers   int
 	Resolution string
+	Seeders    int
 	Site       string
 	Size       int64
 	Year       int
@@ -105,8 +107,14 @@ func (ri ResultItem) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	if ri.Language != "" {
 		attrs = append(attrs, ChannelItemAttribute{Name: "language", Value: ri.Language})
 	}
+	if ri.Leechers > 0 {
+		attrs = append(attrs, ChannelItemAttribute{Name: "leechers", Value: strconv.Itoa(ri.Leechers)})
+	}
 	if ri.Resolution != "" {
 		attrs = append(attrs, ChannelItemAttribute{Name: "resolution", Value: ri.Resolution})
+	}
+	if ri.Seeders > 0 {
+		attrs = append(attrs, ChannelItemAttribute{Name: "seeders", Value: strconv.Itoa(ri.Seeders)})
 	}
 	if ri.Site != "" {
 		attrs = append(attrs, ChannelItemAttribute{Name: "site", Value: ri.Site})
