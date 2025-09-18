@@ -52,7 +52,7 @@ func (ud UserData) fetchStream(ctx *context.StoreContext, r *http.Request, rType
 	}
 
 	isImdbStremId := strings.HasPrefix(stremId, "tt")
-	torrentInfoCategory := torrent_info.GetCategoryFromStremId(stremId)
+	torrentInfoCategory := torrent_info.GetCategoryFromStremId(stremId, rType)
 
 	if isImdbStremId {
 		if !ud.IncludeTorz || lazyPullTorz {
