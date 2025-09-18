@@ -297,38 +297,56 @@ func getHTTPClientWithProxy(proxyUrl *url.URL) *http.Client {
 	}
 }
 
-func getIp(client *http.Client) (string, error) {
-	req, err := http.NewRequest(http.MethodGet, "https://checkip.amazonaws.com", nil)
-	if err != nil {
-		return "", err
-	}
-
-	res, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return strings.TrimSpace(string(body)), nil
-}
-
 type IPResolver struct {
 	machineIP string
 
+	checker            string
 	proxyIpByHostname  map[string]string
 	proxyIpByProxyHost map[string]string
 	proxyIpMapStaleAt  time.Time
 	m                  sync.Mutex
 }
 
+func (ipr *IPResolver) getIp(client *http.Client) (string, error) {
+	switch ipr.checker {
+	case "aws", "amazon":
+		req, err := http.NewRequest(http.MethodGet, "https://checkip.amazonaws.com", nil)
+		if err != nil {
+			return "", err
+		}
+		res, err := client.Do(req)
+		if err != nil {
+			return "", err
+		}
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			return "", err
+		}
+		return strings.TrimSpace(string(body)), nil
+	case "akamai":
+		req, err := http.NewRequest(http.MethodGet, "https://whatismyip.akamai.com", nil)
+		if err != nil {
+			return "", err
+		}
+		res, err := client.Do(req)
+		if err != nil {
+			return "", err
+		}
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			return "", err
+		}
+		return strings.TrimSpace(string(body)), nil
+	default:
+		return "", errors.New("invalid ip checker: " + ipr.checker)
+	}
+}
+
 func (ipr *IPResolver) GetMachineIP() string {
 	if ipr.machineIP == "" {
 		client := GetHTTPClient(TUNNEL_TYPE_NONE)
-		ip, err := getIp(client)
+		client.Timeout = 30 * time.Second
+		ip, err := ipr.getIp(client)
 		if err != nil {
 			log.Panicf("Failed to detect Machine IP: %v\n", err)
 		}
@@ -339,7 +357,8 @@ func (ipr *IPResolver) GetMachineIP() string {
 
 func (ipr *IPResolver) GetTunnelIP() (string, error) {
 	client := GetHTTPClient(TUNNEL_TYPE_FORCED)
-	ip, err := getIp(client)
+	client.Timeout = 30 * time.Second
+	ip, err := ipr.getIp(client)
 	if err != nil {
 		return "", err
 	}
@@ -368,7 +387,8 @@ func (ipr *IPResolver) resolveTunnelIPMap() error {
 			ip = ipr.GetMachineIP()
 		} else {
 			client := getHTTPClientWithProxy(&u)
-			if proxyIp, err := getIp(client); err == nil {
+			client.Timeout = 30 * time.Second
+			if proxyIp, err := ipr.getIp(client); err == nil {
 				ip = proxyIp
 			} else {
 				errs = append(errs, err)

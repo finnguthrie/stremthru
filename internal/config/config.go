@@ -76,6 +76,7 @@ var defaultValueByEnv = map[string]map[string]string{
 		"STREMTHRU_STREMIO_TORZ_PUBLIC_MAX_STORE_COUNT":    "3",
 		"STREMTHRU_STREMIO_WRAP_PUBLIC_MAX_UPSTREAM_COUNT": "5",
 		"STREMTHRU_STREMIO_WRAP_PUBLIC_MAX_STORE_COUNT":    "3",
+		"STREMTHRU_IP_CHECKER":                             "aws",
 	},
 }
 
@@ -568,7 +569,9 @@ var config = func() Config {
 		StoreContentCachedStaleTime: storeContentCachedStaleTimeMap,
 		StoreClientUserAgent:        getEnv("STREMTHRU_STORE_CLIENT_USER_AGENT"),
 		ContentProxyConnectionLimit: contentProxyConnectionMap,
-		IP:                          &IPResolver{},
+		IP: &IPResolver{
+			checker: getEnv("STREMTHRU_IP_CHECKER"),
+		},
 
 		DataDir: dataDir,
 	}
