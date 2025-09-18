@@ -170,7 +170,6 @@
             </div>
           </div>
 
-          {{if $.IsAuthed}}
           <div class="flex flex-row flex-wrap gap-4">
             <div class="grow">
               <label for="lists[{{$idx}}].name">Name</label>
@@ -183,7 +182,6 @@
               <small><span class="error">{{$list.Error.Type}}</span><span class="description"></span></small>
             </div>
           </div>
-          {{end}}
 
           {{template "configure_config.html" $list.Shuffle}}
 

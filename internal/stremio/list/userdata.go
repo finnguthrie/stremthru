@@ -201,10 +201,8 @@ func getUserData(r *http.Request, isAuthed bool) (*UserData, error) {
 		}
 
 		ud.Lists = make([]string, 0, lists_length)
-		if isAuthed {
-			ud.ListNames = make([]string, 0, lists_length)
-			ud.ListTypes = make([]string, 0, lists_length)
-		}
+		ud.ListNames = make([]string, 0, lists_length)
+		ud.ListTypes = make([]string, 0, lists_length)
 		ud.ListShuffle = make([]int, 0, lists_length)
 
 		ud.list_urls = make([]string, 0, lists_length)
@@ -221,10 +219,8 @@ func getUserData(r *http.Request, isAuthed bool) (*UserData, error) {
 			idx++
 
 			ud.Lists = append(ud.Lists, listId)
-			if isAuthed {
-				ud.ListNames = append(ud.ListNames, r.Form.Get("lists["+strconv.Itoa(i)+"].name"))
-				ud.ListTypes = append(ud.ListTypes, r.Form.Get("lists["+strconv.Itoa(i)+"].type"))
-			}
+			ud.ListNames = append(ud.ListNames, r.Form.Get("lists["+strconv.Itoa(i)+"].name"))
+			ud.ListTypes = append(ud.ListTypes, r.Form.Get("lists["+strconv.Itoa(i)+"].type"))
 			if r.Form.Get("lists["+strconv.Itoa(i)+"].shuffle") == "on" {
 				ud.ListShuffle = append(ud.ListShuffle, 1)
 			} else {
