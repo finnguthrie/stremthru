@@ -48,7 +48,7 @@ func handleListTorrents(w http.ResponseWriter, r *http.Request) {
 		shared.ErrorBadRequest(r, "missing sid").Send(w, r)
 		return
 	}
-	if !strings.HasPrefix(sid, "tt") {
+	if !strings.HasPrefix(sid, "tt") && !strings.HasPrefix(sid, "anidb:") {
 		shared.ErrorBadRequest(r, "unsupported sid").Send(w, r)
 		return
 	}

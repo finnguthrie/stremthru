@@ -373,13 +373,14 @@ var record_streams_query_before_values = fmt.Sprintf(
 		Column.Idx,
 		Column.Size,
 		Column.SId,
+		Column.ASId,
 		Column.Source,
 		Column.VideoHash,
 	),
 )
-var record_streams_query_values_placeholder = fmt.Sprintf("(%s)", util.RepeatJoin("?", 7, ","))
+var record_streams_query_values_placeholder = fmt.Sprintf("(%s)", util.RepeatJoin("?", 8, ","))
 var record_streams_query_on_conflict = fmt.Sprintf(
-	" ON CONFLICT (%s,%s) DO UPDATE SET %s, %s, %s, %s, %s, %s",
+	" ON CONFLICT (%s,%s) DO UPDATE SET %s, %s, %s, %s, %s, %s, %s",
 	Column.Hash,
 	Column.Path,
 	fmt.Sprintf(
@@ -393,6 +394,10 @@ var record_streams_query_on_conflict = fmt.Sprintf(
 	fmt.Sprintf(
 		"%s = CASE WHEN ts.%s IN ('', '*') THEN EXCLUDED.%s ELSE ts.%s END",
 		Column.SId, Column.SId, Column.SId, Column.SId,
+	),
+	fmt.Sprintf(
+		"%s = CASE WHEN ts.%s = '' THEN EXCLUDED.%s ELSE ts.%s END",
+		Column.ASId, Column.ASId, Column.ASId, Column.ASId,
 	),
 	fmt.Sprintf(
 		"%s = CASE WHEN ts.%s = '' THEN EXCLUDED.%s ELSE ts.%s END",
@@ -414,14 +419,14 @@ func Record(items []InsertData, discardIdx bool) error {
 	}
 
 	errs := []error{}
-	for cItems := range slices.Chunk(items, 200) {
+	for cItems := range slices.Chunk(items, 150) {
 		seenFileMap := map[string]struct{}{}
 
 		count := len(cItems)
-		args := make([]any, 0, count*7)
+		args := make([]any, 0, count*8)
 		for i := range cItems {
 			item := &cItems[i]
-			if item.Path == "" {
+			if !strings.HasPrefix(item.Path, "/") {
 				continue
 			}
 
@@ -442,6 +447,7 @@ func Record(items []InsertData, discardIdx bool) error {
 					idx,
 					item.Size,
 					sid,
+					item.ASId,
 					item.Source,
 					item.VideoHash,
 				)

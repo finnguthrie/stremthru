@@ -1,7 +1,6 @@
 package buddy
 
 import (
-	"strings"
 	"time"
 
 	"github.com/MunifTanjim/stremthru/core"
@@ -9,6 +8,7 @@ import (
 	"github.com/MunifTanjim/stremthru/internal/logger"
 	"github.com/MunifTanjim/stremthru/internal/peer"
 	ti "github.com/MunifTanjim/stremthru/internal/torrent_info"
+	ts "github.com/MunifTanjim/stremthru/internal/torrent_stream"
 	tss "github.com/MunifTanjim/stremthru/internal/torrent_stream/torrent_stream_syncinfo"
 )
 
@@ -28,27 +28,28 @@ var PullPeer, pullLocalOnly = func() (*peer.APIClient, bool) {
 
 var pullPeerLog = logger.Scoped("peer:pull")
 
+// supports imdb or anidb
 func PullTorrentsByStremId(sid string, originInstanceId string) {
 	if PullPeer == nil || !tss.ShouldPull(sid) {
 		return
 	}
 
-	cleanedSid, _, _ := strings.Cut(sid, ":")
+	cleanSId := ts.CleanStremId(sid)
 	start := time.Now()
 	res, err := PullPeer.ListTorrents(&peer.ListTorrentsByStremIdParams{
-		SId:              cleanedSid,
+		SId:              cleanSId,
 		LocalOnly:        pullLocalOnly,
 		OriginInstanceId: originInstanceId,
 	})
 	duration := time.Since(start)
 
 	if err != nil {
-		pullPeerLog.Error("failed to pull torrents", "error", core.PackError(err), "duration", duration, "sid", cleanedSid)
+		pullPeerLog.Error("failed to pull torrents", "error", core.PackError(err), "duration", duration, "sid", cleanSId)
 		return
 	}
 
 	count := len(res.Data.Items)
-	pullPeerLog.Info("pulled torrents", "duration", duration, "sid", cleanedSid, "count", count)
+	pullPeerLog.Info("pulled torrents", "duration", duration, "sid", cleanSId, "count", count)
 
 	items := make([]ti.TorrentInfoInsertData, count)
 	for i := range res.Data.Items {
@@ -65,7 +66,7 @@ func PullTorrentsByStremId(sid string, originInstanceId string) {
 		}
 	}
 	ti.Upsert(items, "", false)
-	go tss.MarkPulled(cleanedSid)
+	go tss.MarkPulled(cleanSId)
 }
 
 func ListTorrentsByStremId(sid string, localOnly bool, originInstanceId string, noMissingSize bool) (*ti.ListTorrentsData, error) {

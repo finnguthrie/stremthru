@@ -13,7 +13,6 @@ import (
 
 	"github.com/MunifTanjim/go-ptt"
 	"github.com/MunifTanjim/stremthru/internal/anidb"
-	"github.com/MunifTanjim/stremthru/internal/anime"
 	"github.com/MunifTanjim/stremthru/internal/db"
 	"github.com/MunifTanjim/stremthru/internal/imdb_torrent"
 	ts "github.com/MunifTanjim/stremthru/internal/torrent_stream"
@@ -1026,23 +1025,25 @@ var query_list_hashes_for_anime_by_anidb_id_from_anidb_torrent_with_episode = fm
 )
 
 func listHashesForAnimeByAniDBId(anidbId, season, episode string) ([]string, error) {
+	if anidbId == "" {
+		return []string{}, nil
+	}
+
 	var query strings.Builder
 	var args []any
 
 	s := util.SafeParseInt(season, -1)
+	query.WriteString(query_list_hashes_for_anime_by_anidb_id_from_torrent_stream)
+	query.WriteString(" UNION ")
 	if episode == "" {
-		query.WriteString(query_list_hashes_for_anime_by_anidb_id_from_torrent_stream)
 		args = []any{anidbId + ":%"}
 
-		query.WriteString(" UNION ")
 		query.WriteString(query_list_hashes_for_anime_by_anidb_id_from_anidb_torrent)
 		args = append(args, anidbId, s)
 	} else {
-		query.WriteString(query_list_hashes_for_anime_by_anidb_id_from_torrent_stream)
 		args = []any{anidbId + ":" + episode}
 
 		ep := util.SafeParseInt(episode, -1)
-		query.WriteString(" UNION ")
 		query.WriteString(query_list_hashes_for_anime_by_anidb_id_from_anidb_torrent_with_episode)
 		args = append(args, anidbId, s, ep, ep)
 	}
@@ -1095,30 +1096,13 @@ var query_list_hashes_by_stremid_from_imdb_torrent_for_series = fmt.Sprintf(
 )
 
 func ListHashesByStremId(stremId string) ([]string, error) {
-	if !strings.HasPrefix(stremId, "tt") {
-		var anidbId, season, episode string
-		var err error
-		if kitsuStremId, ok := strings.CutPrefix(stremId, "kitsu:"); ok {
-			kitsuId, kitsuEpisode, _ := strings.Cut(kitsuStremId, ":")
-			anidbId, season, err = anime.GetAniDBIdByKitsuId(kitsuId)
-			if err != nil {
-				return nil, err
-			}
-			episode = kitsuEpisode
-		} else if malStremId, ok := strings.CutPrefix(stremId, "mal:"); ok {
-			malId, malEpisode, _ := strings.Cut(malStremId, ":")
-			anidbId, season, err = anime.GetAniDBIdByMALId(malId)
-			if err != nil {
-				return nil, err
-			}
-			episode = malEpisode
-		} else {
-			return nil, fmt.Errorf("unsupported strem id: %s", stremId)
-		}
-		if anidbId == "" {
-			return []string{}, nil
-		}
-		return listHashesForAnimeByAniDBId(anidbId, season, episode)
+	nsid, err := ts.NormalizeStreamId(stremId)
+	if err != nil {
+		return nil, err
+	}
+
+	if nsid.IsAnime {
+		return listHashesForAnimeByAniDBId(nsid.Id, nsid.Season, nsid.Episode)
 	}
 
 	query := ""
@@ -1196,7 +1180,7 @@ var list_query_columns = strings.Join(
 )
 
 var query_list_by_stremid_select = fmt.Sprintf(
-	"SELECT %s, %s(%s('p',ts.%s,'i',ts.%s,'s',ts.%s,'sid',ts.%s,'src',ts.%s)) AS files",
+	"SELECT %s, %s(%s('p',ts.%s,'i',ts.%s,'s',ts.%s,'sid',ts.%s,'asid',ts.%s,'src',ts.%s,'vhash',ts.%s)) AS files",
 	list_query_columns,
 	db.FnJSONGroupArray,
 	db.FnJSONObject,
@@ -1204,7 +1188,9 @@ var query_list_by_stremid_select = fmt.Sprintf(
 	ts.Column.Idx,
 	ts.Column.Size,
 	ts.Column.SId,
+	ts.Column.ASId,
 	ts.Column.Source,
+	ts.Column.VideoHash,
 )
 
 var query_list_by_stremid_after_select = fmt.Sprintf(
@@ -1237,31 +1223,63 @@ var query_list_by_stremid_after_cond = fmt.Sprintf(
 )
 
 func ListByStremId(stremId string, excludeMissingSize bool) (*ListTorrentsData, error) {
-	query := query_list_by_stremid_select + query_list_by_stremid_after_select + " WHERE "
+	nsid, err := ts.NormalizeStreamId(stremId)
+	if err != nil {
+		return nil, err
+	}
+
+	if nsid.Id == "" {
+		return &ListTorrentsData{
+			Items:      []TorrentItem{},
+			TotalItems: 0,
+		}, nil
+	}
+
+	var query strings.Builder
+	query.WriteString(query_list_by_stremid_select)
+	query.WriteString(query_list_by_stremid_after_select)
+	query.WriteString(" WHERE ")
 	var args []any
 
-	if strings.Contains(stremId, ":") {
-		args = make([]any, 0, 5)
-		query += query_list_by_stremid_cond_hashes_for_series
-		args = append(args, stremId)
-		if parts := strings.SplitN(stremId, ":", 3); len(parts) == 3 {
-			args = append(args, parts[0], parts[0], parts[1], "%,"+parts[1]+",%", parts[2], "%,"+parts[2]+",%")
+	if nsid.IsAnime {
+		query.WriteString(Column.Hash)
+		query.WriteString(" IN (")
+		s := util.SafeParseInt(nsid.Season, -1)
+		query.WriteString(query_list_hashes_for_anime_by_anidb_id_from_torrent_stream)
+		query.WriteString(" UNION ")
+		if nsid.Episode == "" {
+			args = make([]any, 0, 3)
+			args = append(args, nsid.Id+":%")
+			query.WriteString(query_list_hashes_for_anime_by_anidb_id_from_anidb_torrent)
+			args = append(args, nsid.Id, s)
 		} else {
-			imdbId, _, _ := strings.Cut(stremId, ":")
-			args = append(args, imdbId)
+			args = make([]any, 0, 5)
+			args = append(args, nsid.Id+":"+nsid.Episode)
+
+			ep := util.SafeParseInt(nsid.Episode, -1)
+			query.WriteString(query_list_hashes_for_anime_by_anidb_id_from_anidb_torrent_with_episode)
+			args = append(args, nsid.Id, s, ep, ep)
 		}
+		query.WriteString(")")
 	} else {
-		args = make([]any, 0, 3)
-		query += query_list_by_stremid_cond_hashes_for_movie
-		args = append(args, stremId, stremId+":%", stremId)
+		if nsid.Season != "" && nsid.Episode != "" {
+			args = make([]any, 0, 5)
+			query.WriteString(query_list_by_stremid_cond_hashes_for_series)
+			args = append(args, stremId, nsid.Id, nsid.Id, "%,"+nsid.Season+",%", "%,"+nsid.Episode+",%")
+		} else {
+			args = make([]any, 0, 3)
+			query.WriteString(query_list_by_stremid_cond_hashes_for_movie)
+			args = append(args, stremId, stremId+":%", stremId)
+		}
 	}
 
 	if excludeMissingSize {
-		query += " AND " + query_list_by_stremid_cond_no_missing_size
+		query.WriteString(" AND ")
+		query.WriteString(query_list_by_stremid_cond_no_missing_size)
 	}
-	query += query_list_by_stremid_after_cond
+	query.WriteString(query_list_by_stremid_after_cond)
 
-	rows, err := db.Query(query, args...)
+	rows, err := db.Query(query.String(), args...)
 	if err != nil {
 		log.Error("failed to list torrents by strem id", "error", err, "stremId", stremId)
 		return nil, err

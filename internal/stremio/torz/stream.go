@@ -205,12 +205,15 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 
 	eud := ud.GetEncoded()
 
-	if isImdbId {
+	if nsid, err := torrent_stream.NormalizeStreamId(id); err == nil {
+		cleanSId := nsid.ToClean()
 		if torzLazyPull {
-			go buddy.PullTorrentsByStremId(id, "")
+			go buddy.PullTorrentsByStremId(cleanSId, "")
 		} else {
-			buddy.PullTorrentsByStremId(id, "")
+			buddy.PullTorrentsByStremId(cleanSId, "")
 		}
+	} else if !errors.Is(err, torrent_stream.ErrUnsupportedStremId) {
+		log.Error("failed to normalize strem id", "error", err, "id", id)
 	}
 
 	hashes, err := torrent_info.ListHashesByStremId(id)

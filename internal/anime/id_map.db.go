@@ -305,6 +305,36 @@ func GetTypeByKitsuIds(ids []int) (map[int]AnimeIdMapType, error) {
 	return typeById, nil
 }
 
+type cachedAniDBId struct {
+	Id     string
+	Season string
+}
+
+var query_get_anidb_season_by_id = fmt.Sprintf(
+	`SELECT coalesce(%s, '') FROM %s WHERE %s = ? LIMIT 1`,
+	anidb.TitleColumn.Season,
+	anidb.TitleTableName,
+	anidb.TitleColumn.TId,
+)
+
+var anidbSeasonByIdCache = cache.NewLRUCache[string](&cache.CacheConfig{
+	Lifetime: 60 * time.Second,
+	Name:     "anidb_season_by_id",
+})
+
+func GetAniDBSeasonById(anidbId string) (season string, err error) {
+	if anidbSeasonByIdCache.Get(anidbId, &season) {
+		return season, nil
+	}
+	query := query_get_anidb_season_by_id
+	row := db.QueryRow(query, anidbId)
+	if err = row.Scan(&season); err != nil && err != sql.ErrNoRows {
+		return "", err
+	}
+	anidbSeasonByIdCache.Add(anidbId, season)
+	return season, nil
+}
+
 var query_get_anidb_id_by_kitsu_id = fmt.Sprintf(
 	`SELECT coalesce(im.%s, ''), coalesce(at.%s, '') FROM %s im LEFT JOIN %s at ON at.%s = im.%s WHERE im.%s = ? LIMIT 1`,
 	IdMapColumn.AniDB,
@@ -315,11 +345,6 @@ var query_get_anidb_id_by_kitsu_id = fmt.Sprintf(
 	IdMapColumn.AniDB,
 	IdMapColumn.Kitsu,
 )
-
-type cachedAniDBId struct {
-	Id     string
-	Season string
-}
 
 var anidbIdByKitsuIdCache = cache.NewLRUCache[cachedAniDBId](&cache.CacheConfig{
 	Lifetime: 60 * time.Second,
@@ -336,6 +361,7 @@ func GetAniDBIdByKitsuId(kitsuId string) (anidbId, season string, err error) {
 	if err = row.Scan(&anidbId, &season); err != nil && err != sql.ErrNoRows {
 		return "", "", err
 	}
+	anidbSeasonByIdCache.Add(anidbId, season)
 	cachedAniDBId.Id = anidbId
 	cachedAniDBId.Season = season
 	anidbIdByKitsuIdCache.Add(kitsuId, cachedAniDBId)
@@ -368,6 +394,7 @@ func GetAniDBIdByMALId(malId string) (anidbId, season string, err error) {
 	if err = row.Scan(&anidbId, &season); err != nil && err != sql.ErrNoRows {
 		return "", "", err
 	}
+	anidbSeasonByIdCache.Add(anidbId, season)
 	cachedAniDBId.Id = anidbId
 	cachedAniDBId.Season = season
 	anidbIdByMALIdCache.Add(malId, cachedAniDBId)

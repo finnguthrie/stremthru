@@ -3,11 +3,11 @@ package torrent_stream_syncinfo
 import (
 	"database/sql"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/MunifTanjim/stremthru/internal/cache"
 	"github.com/MunifTanjim/stremthru/internal/db"
+	"github.com/MunifTanjim/stremthru/internal/torrent_stream"
 )
 
 var pullCache = cache.NewLRUCache[time.Time](&cache.CacheConfig{
@@ -51,7 +51,10 @@ var Columns = []string{
 var staleTime = 24 * time.Hour
 
 func ShouldPull(sid string) bool {
-	sid, _, _ = strings.Cut(sid, ":")
+	sid = torrent_stream.CleanStremId(sid)
+	if sid == "" {
+		return false
+	}
 
 	var syncedAt db.Timestamp
 	if !pullCache.Get(sid, &syncedAt.Time) {
@@ -72,7 +75,10 @@ func ShouldPull(sid string) bool {
 }
 
 func ShouldPush(sid string) bool {
-	sid, _, _ = strings.Cut(sid, ":")
+	sid = torrent_stream.CleanStremId(sid)
+	if sid == "" {
+		return false
+	}
 
 	var syncedAt db.Timestamp
 	if !pushCache.Get(sid, &syncedAt.Time) {
@@ -93,7 +99,11 @@ func ShouldPush(sid string) bool {
 }
 
 func MarkPulled(sid string) {
-	sid, _, _ = strings.Cut(sid, ":")
+	sid = torrent_stream.CleanStremId(sid)
+	if sid == "" {
+		return
+	}
+
 	query := fmt.Sprintf(
 		"INSERT INTO %s (%s,%s) VALUES (?,%s) ON CONFLICT (%s) DO UPDATE SET %s = EXCLUDED.%s",
 		TableName,
@@ -114,7 +124,11 @@ func MarkPulled(sid string) {
 }
 
 func MarkPushed(sid string) {
-	sid, _, _ = strings.Cut(sid, ":")
+	sid = torrent_stream.CleanStremId(sid)
+	if sid == "" {
+		return
+	}
+
 	query := fmt.Sprintf(
 		"INSERT INTO %s (%s,%s) VALUES (?,%s) ON CONFLICT (%s) DO UPDATE SET %s = EXCLUDED.%s",
 		TableName,
