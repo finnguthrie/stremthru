@@ -387,6 +387,19 @@ func getUserData(r *http.Request, isAuthed bool) (*UserData, error) {
 
 				list := tmdb.TMDBList{}
 				switch {
+				case strings.HasPrefix(listUrl.Path, "/company/"):
+					parts := strings.SplitN(strings.Trim(strings.TrimPrefix(listUrl.Path, "/company/"), "/"), "/", 2)
+					if len(parts) != 2 {
+						udErr.list_urls[idx] = "Invalid TMDB URL"
+						continue
+					}
+					companyId, _, _ := strings.Cut(parts[0], "-")
+					if !util.IsNumericString(companyId) {
+						udErr.list_urls[idx] = "Invalid TMDB URL"
+						continue
+					}
+					listType := parts[1]
+					list.Id = tmdb.ID_PREFIX_DYNAMIC_COMPANY + companyId + ":" + listType
 				case strings.HasPrefix(listUrl.Path, "/list/"):
 					parts := strings.SplitN(strings.TrimPrefix(listUrl.Path, "/list/"), "-", 2)
 					if !util.IsNumericString(parts[0]) {
@@ -397,7 +410,7 @@ func getUserData(r *http.Request, isAuthed bool) (*UserData, error) {
 				case strings.HasPrefix(listUrl.Path, "/movie") || strings.HasPrefix(listUrl.Path, "/tv"):
 					meta := tmdb.GetDynamicListMeta(listUrl.Path)
 					if meta == nil {
-						udErr.list_urls[idx] = "Unsupported Trakt.tv URL"
+						udErr.list_urls[idx] = "Unsupported TMDB URL"
 						continue
 					}
 

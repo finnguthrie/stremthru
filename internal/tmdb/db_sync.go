@@ -3,6 +3,7 @@ package tmdb
 import (
 	"errors"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/MunifTanjim/stremthru/internal/cache"
@@ -27,15 +28,25 @@ func syncList(l *TMDBList, tokenId string) error {
 
 	var list *List
 	if l.IsDynamic() {
-		log.Debug("fetching dynamic list by id", "id", l.Id)
-		meta := GetDynamicListMeta(l.Id)
-		if meta == nil {
-			return errors.New("invalid id")
-		}
-		var err error
-		list, err = meta.Fetch(client)
-		if err != nil {
-			return err
+		if l.IsCompanySpecific() {
+			log.Debug("fetching company list by id", "id", l.Id)
+			companyId, mediaType, _ := strings.Cut(strings.TrimPrefix(l.Id, ID_PREFIX_DYNAMIC_COMPANY), ":")
+			var err error
+			list, err = fetchCompanyList(client, companyId, MediaType(mediaType))
+			if err != nil {
+				return err
+			}
+		} else {
+			log.Debug("fetching dynamic list by id", "id", l.Id)
+			meta := GetDynamicListMeta(l.Id)
+			if meta == nil {
+				return errors.New("invalid id")
+			}
+			var err error
+			list, err = meta.Fetch(client)
+			if err != nil {
+				return err
+			}
 		}
 	} else if l.Id != "" {
 		log.Debug("fetching list by id", "id", l.Id)

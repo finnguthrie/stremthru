@@ -160,9 +160,15 @@ func GetManifest(r *http.Request, ud *UserData) (*stremio.Manifest, error) {
 				}
 
 				if list.IsDynamic() {
-					meta := tmdb.GetDynamicListMeta(idStr)
-
-					switch meta.MediaType {
+					var mediaType tmdb.MediaType
+					if list.IsCompanySpecific() {
+						_, _mediaType, _ := strings.Cut(strings.TrimPrefix(idStr, tmdb.ID_PREFIX_DYNAMIC_COMPANY), ":")
+						mediaType = tmdb.MediaType(_mediaType)
+					} else {
+						meta := tmdb.GetDynamicListMeta(idStr)
+						mediaType = meta.MediaType
+					}
+					switch tmdb.MediaType(mediaType) {
 					case tmdb.MediaTypeMovie:
 						catalog.Type = string(stremio.ContentTypeMovie)
 						catalog.Extra = append(catalog.Extra, stremio.CatalogExtra{

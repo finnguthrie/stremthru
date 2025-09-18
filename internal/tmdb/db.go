@@ -28,6 +28,9 @@ type TMDBList struct {
 }
 
 func (l *TMDBList) GetURL() string {
+	if l.IsCompanySpecific() {
+		return "https://www.themoviedb.org/company/" + strings.Replace(strings.TrimPrefix(l.Id, ID_PREFIX_DYNAMIC_COMPANY), ":", "/", 1)
+	}
 	if l.IsUserSpecific() {
 		return "https://www.themoviedb.org/u/" + l.Username + "/" + strings.TrimPrefix(l.Id, ID_PREFIX_DYNAMIC_USER_SPECIFIC)
 	}
@@ -39,9 +42,14 @@ func (l *TMDBList) GetURL() string {
 
 const ID_PREFIX_DYNAMIC = "~:"
 const ID_PREFIX_DYNAMIC_USER_SPECIFIC = ID_PREFIX_DYNAMIC + "u:"
+const ID_PREFIX_DYNAMIC_COMPANY = ID_PREFIX_DYNAMIC + "c:"
 
 func (l *TMDBList) IsDynamic() bool {
 	return strings.HasPrefix(l.Id, ID_PREFIX_DYNAMIC)
+}
+
+func (l *TMDBList) IsCompanySpecific() bool {
+	return strings.HasPrefix(l.Id, ID_PREFIX_DYNAMIC_COMPANY)
 }
 
 func (l *TMDBList) IsUserSpecific() bool {

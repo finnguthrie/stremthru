@@ -566,3 +566,77 @@ func GetDynamicListMeta(id string) *dynamicListMeta {
 	}
 	return nil
 }
+
+func fetchCompanyListItems(client *APIClient, companyId string, mediaType MediaType, page int) (*PaginatedResult[ListItem], error) {
+	data := PaginatedResult[ListItem]{}
+	log.Debug("fetching company list page", "company_id", companyId, "media_type", mediaType, "page", page)
+	switch mediaType {
+	case MediaTypeMovie:
+		res, err := client.DiscoverMovie(&DiscoverMovieParams{
+			IncludeAdult:  true,
+			Page:          page,
+			WithCompanies: companyId,
+		})
+		if err != nil {
+			return nil, err
+		}
+		data.Page = res.Data.Page
+		data.TotalPages = res.Data.TotalPages
+		data.TotalResults = res.Data.TotalResults
+		for i := range res.Data.Results {
+			data.Results = append(data.Results, ListItem{
+				MediaType: mediaType,
+				data:      &res.Data.Results[i],
+			})
+		}
+	case MediaTypeTVShow:
+		res, err := client.DiscoverTV(&DiscoverTVParams{
+			IncludeAdult:  true,
+			Page:          page,
+			WithCompanies: companyId,
+		})
+		if err != nil {
+			return nil, err
+		}
+		data.Page = res.Data.Page
+		data.TotalPages = res.Data.TotalPages
+		data.TotalResults = res.Data.TotalResults
+		for i := range res.Data.Results {
+			data.Results = append(data.Results, ListItem{
+				MediaType: mediaType,
+				data:      &res.Data.Results[i],
+			})
+		}
+	}
+	return &data, nil
+}
+
+func fetchCompanyList(client *APIClient, companyId string, mediaType MediaType) (*List, error) {
+	l := List{
+		Name:      "",
+		Public:    true,
+		ItemCount: 0,
+	}
+	company, err := client.FetchCompany(&FetchCompanyParams{
+		Id: util.SafeParseInt(companyId, -1),
+	})
+	if err != nil {
+		return nil, err
+	}
+	l.Name = company.Data.Name
+
+	page := 0
+	for {
+		page++
+		res, err := fetchCompanyListItems(client, companyId, mediaType, page)
+		if err != nil {
+			return nil, err
+		}
+		l.ItemCount = res.TotalResults
+		l.Results = append(l.Results, res.Results...)
+		if res.TotalPages == page {
+			break
+		}
+	}
+	return &l, nil
+}
