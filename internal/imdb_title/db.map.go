@@ -101,6 +101,7 @@ var query_get_imdb_id_by_trakt_id_cond_movie = fmt.Sprintf(
 		util.RepeatJoin("'%s'", len(movieTypes), ","),
 		movieTypes[0],
 		movieTypes[1],
+		movieTypes[2],
 	),
 	MapColumn.TraktId,
 )
@@ -113,7 +114,6 @@ var query_get_imdb_id_by_trakt_id_cond_show = fmt.Sprintf(
 		showTypes[1],
 		showTypes[2],
 		showTypes[3],
-		showTypes[4],
 	),
 	MapColumn.TraktId,
 )
@@ -168,9 +168,9 @@ func GetIMDBIdByTraktId(traktMovieIds, traktShowIds []string) (map[string]string
 			return nil, nil, err
 		}
 		switch imdbType {
-		case movieTypes[0], movieTypes[1]:
+		case movieTypes[0], movieTypes[1], movieTypes[2]:
 			movieImdbIdByTraktId[traktId] = imdbId
-		case showTypes[0], showTypes[1], showTypes[2], showTypes[3], showTypes[4]:
+		case showTypes[0], showTypes[1], showTypes[2], showTypes[3]:
 			showImdbIdByTraktId[traktId] = imdbId
 		}
 	}
@@ -199,6 +199,7 @@ var query_get_imdb_id_by_tmdb_id_cond_movie = fmt.Sprintf(
 		util.RepeatJoin("'%s'", len(movieTypes), ","),
 		movieTypes[0],
 		movieTypes[1],
+		movieTypes[2],
 	),
 	MapColumn.TMDBId,
 )
@@ -211,7 +212,6 @@ var query_get_imdb_id_by_tmdb_id_cond_show = fmt.Sprintf(
 		showTypes[1],
 		showTypes[2],
 		showTypes[3],
-		showTypes[4],
 	),
 	MapColumn.TMDBId,
 )
@@ -266,9 +266,9 @@ func GetIMDBIdByTMDBId(tmdbMovieIds, tmdbShowIds []string) (map[string]string, m
 			return nil, nil, err
 		}
 		switch imdbType {
-		case movieTypes[0], movieTypes[1]:
+		case movieTypes[0], movieTypes[1], movieTypes[2]:
 			movieImdbIdByTMDBId[tmdbId] = imdbId
-		case showTypes[0], showTypes[1], showTypes[2], showTypes[3], showTypes[4]:
+		case showTypes[0], showTypes[1], showTypes[2], showTypes[3]:
 			showImdbIdByTMDBId[tmdbId] = imdbId
 		}
 	}
@@ -297,6 +297,7 @@ var query_get_imdb_id_by_tvdb_id_cond_movie = fmt.Sprintf(
 		util.RepeatJoin("'%s'", len(movieTypes), ","),
 		movieTypes[0],
 		movieTypes[1],
+		movieTypes[2],
 	),
 	MapColumn.TVDBId,
 )
@@ -309,7 +310,6 @@ var query_get_imdb_id_by_tvdb_id_cond_show = fmt.Sprintf(
 		showTypes[1],
 		showTypes[2],
 		showTypes[3],
-		showTypes[4],
 	),
 	MapColumn.TVDBId,
 )

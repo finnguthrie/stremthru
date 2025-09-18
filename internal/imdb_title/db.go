@@ -29,10 +29,10 @@ const (
 
 var movieTypes = []IMDBTitleType{
 	IMDBTitleTypeMovie,
+	IMDBTitleTypeShort,
 	IMDBTitleTypeTvMovie,
 }
 var showTypes = []IMDBTitleType{
-	IMDBTitleTypeShort,
 	IMDBTitleTypeTvMiniSeries,
 	IMDBTitleTypeTvSeries,
 	IMDBTitleTypeTvShort,
@@ -305,19 +305,19 @@ var RebuildFTS = func() func() error {
 }()
 
 var __sl_query_search_type_movie = fmt.Sprintf(
-	`itf.%s IN ('%s', '%s')`,
+	`itf.%s IN ('%s', '%s', '%s')`,
 	Column.Type,
 	movieTypes[0],
 	movieTypes[1],
+	movieTypes[2],
 )
 var __sl_query_search_type_show = fmt.Sprintf(
-	`itf.%s IN ('%s', '%s', '%s', '%s', '%s')`,
+	`itf.%s IN ('%s', '%s', '%s', '%s')`,
 	Column.Type,
 	showTypes[0],
 	showTypes[1],
 	showTypes[2],
 	showTypes[3],
-	showTypes[4],
 )
 var __sl_query_search_year_eq = fmt.Sprintf(
 	`itf.%s = ?`,
