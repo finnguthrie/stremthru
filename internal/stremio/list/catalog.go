@@ -635,7 +635,7 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 			letterboxdIds = append(letterboxdIds, item.Id)
 		}
 
-		imdbIdByLetterboxdId, err := imdb_title.GetIMDBIdByLetterboxdId(letterboxdIds)
+		idMapByLetterboxdId, err := imdb_title.GetIdMapsByLetterboxdId(letterboxdIds)
 		if err != nil {
 			SendError(w, r, err)
 			return
@@ -645,8 +645,11 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 			item := &catalogItems[i]
 			titem := item.item.(*letterboxd.LetterboxdItem)
 			imdbId := ""
-			if id, ok := imdbIdByLetterboxdId[titem.Id]; ok {
-				imdbId = id
+			if idMap, ok := idMapByLetterboxdId[titem.Id]; ok {
+				imdbId = idMap.IMDBId
+				if idMap.Type.IsShow() {
+					item.Type = stremio.ContentTypeSeries
+				}
 			}
 			if imdbId == "" && item.MetaPreview.Id == "" {
 				continue
