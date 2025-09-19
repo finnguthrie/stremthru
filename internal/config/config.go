@@ -879,7 +879,7 @@ func PrintConfig(state *AppState) {
 			}
 		case "letterboxd.com":
 			info := ""
-			if !Integration.Letterboxd.IsPiggybacked() {
+			if Integration.Letterboxd.IsPiggybacked() {
 				info = " (piggybacked)"
 			}
 			l.Println("   - " + integration + info)
