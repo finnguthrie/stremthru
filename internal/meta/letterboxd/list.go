@@ -108,7 +108,7 @@ func handleGetLetterboxdUserWatchlist(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userId := r.PathValue("user_id")
-	l := letterboxd.LetterboxdList{Id: letterboxd.ID_PREFIX_USER_WATCHLIST + userId}
+	l := letterboxd.LetterboxdList{Id: letterboxd.ID_PREFIX_USER_WATCHLIST + userId, UserId: userId}
 	if err := l.Fetch(); err != nil {
 		SendError(w, r, err)
 		return

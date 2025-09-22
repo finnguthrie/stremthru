@@ -47,6 +47,13 @@ func syncList(l *LetterboxdList) error {
 	syncListMutex.Lock()
 	defer syncListMutex.Unlock()
 
+	isUserWatchlist := l.IsUserWatchlist()
+	if isUserWatchlist {
+		if l.UserId == "" {
+			return errors.New("user id must be provided for watchlist")
+		}
+	}
+
 	var list *List
 
 	if !LetterboxdEnabled {
@@ -116,8 +123,6 @@ func syncList(l *LetterboxdList) error {
 	}
 
 	client := GetSystemClient()
-
-	isUserWatchlist := l.IsUserWatchlist()
 
 	if isUserWatchlist {
 		l.Name = "Watchlist"
