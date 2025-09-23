@@ -104,7 +104,7 @@ func InitSyncLetterboxdList(conf *WorkerConfig) *Worker {
 			perPage := 100
 			page := 0
 			cursor := ""
-			for hasMore {
+			for hasMore && len(items) < letterboxd.MAX_LIST_ITEM_COUNT {
 				page++
 				log.Debug("fetching list items", "id", l.Id, "page", page)
 				if l.IsUserWatchlist() {
@@ -121,7 +121,7 @@ func InitSyncLetterboxdList(conf *WorkerConfig) *Worker {
 					for i := range res.Data.Items {
 						item := &res.Data.Items[i]
 						rank := i
-						l.Items = append(l.Items, letterboxd.LetterboxdItem{
+						items = append(items, letterboxd.LetterboxdItem{
 							Id:          item.Id,
 							Name:        item.Name,
 							ReleaseYear: item.ReleaseYear,
