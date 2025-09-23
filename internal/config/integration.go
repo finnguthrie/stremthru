@@ -119,6 +119,18 @@ func parseIntegration() IntegrationConfig {
 		bitmagnet.BaseURL = util.MustParseURL(bitmagnetBaseUrl)
 	}
 
+	letterboxd := integrationConfigLettterboxd{
+		ClientId:     getEnv("STREMTHRU_INTEGRATION_LETTERBOXD_CLIENT_ID"),
+		ClientSecret: getEnv("STREMTHRU_INTEGRATION_LETTERBOXD_CLIENT_SECRET"),
+		UserAgent:    getEnv("STREMTHRU_INTEGRATION_LETTERBOXD_USER_AGENT"),
+	}
+
+	minLetterboxdListStaleTime := 6 * time.Hour
+	if letterboxd.IsPiggybacked() {
+		minLetterboxdListStaleTime = 24 * time.Hour
+	}
+	letterboxd.ListStaleTime = mustParseDuration("letterboxd list stale time", getEnv("STREMTHRU_INTEGRATION_LETTERBOXD_LIST_STALE_TIME"), minLetterboxdListStaleTime)
+
 	integration := IntegrationConfig{
 		AniList: integrationConfigAniList{
 			ListStaleTime: mustParseDuration("anilist list stale time", getEnv("STREMTHRU_INTEGRATION_ANILIST_LIST_STALE_TIME"), 15*time.Minute),
@@ -128,12 +140,7 @@ func parseIntegration() IntegrationConfig {
 			User:  getEnv("STREMTHRU_INTEGRATION_GITHUB_USER"),
 			Token: getEnv("STREMTHRU_INTEGRATION_GITHUB_TOKEN"),
 		},
-		Letterboxd: integrationConfigLettterboxd{
-			ClientId:      getEnv("STREMTHRU_INTEGRATION_LETTERBOXD_CLIENT_ID"),
-			ClientSecret:  getEnv("STREMTHRU_INTEGRATION_LETTERBOXD_CLIENT_SECRET"),
-			UserAgent:     getEnv("STREMTHRU_INTEGRATION_LETTERBOXD_USER_AGENT"),
-			ListStaleTime: mustParseDuration("letterboxd list stale time", getEnv("STREMTHRU_INTEGRATION_LETTERBOXD_LIST_STALE_TIME"), 2*24*time.Hour),
-		},
+		Letterboxd: letterboxd,
 		MDBList: integrationConfigMDBList{
 			ListStaleTime: mustParseDuration("mdblist list stale time", getEnv("STREMTHRU_INTEGRATION_MDBLIST_LIST_STALE_TIME"), 15*time.Minute),
 		},
