@@ -2,6 +2,7 @@ package letterboxd
 
 import (
 	"errors"
+	"strings"
 	"sync"
 	"time"
 
@@ -44,15 +45,15 @@ func syncList(l *LetterboxdList) error {
 		return errors.New("id must be provided")
 	}
 
-	syncListMutex.Lock()
-	defer syncListMutex.Unlock()
-
 	isUserWatchlist := l.IsUserWatchlist()
 	if isUserWatchlist {
 		if l.UserId == "" {
 			return errors.New("user id must be provided for watchlist")
 		}
 	}
+
+	syncListMutex.Lock()
+	defer syncListMutex.Unlock()
 
 	var list *List
 
@@ -64,7 +65,7 @@ func syncList(l *LetterboxdList) error {
 		log.Debug("fetching list by id from upstream", "id", l.Id)
 		var res request.APIResponse[meta_type.List]
 		var err error
-		if l.IsUserWatchlist() {
+		if isUserWatchlist {
 			res, err = Peer.FetchLetterboxdUserWatchlist(&peer.FetchLetterboxdUserWatchlistParams{
 				UserId: l.UserId,
 			})
@@ -86,6 +87,7 @@ func syncList(l *LetterboxdList) error {
 		l.Description = list.Description
 		l.Private = list.IsPrivate
 		l.ItemCount = list.ItemCount
+		l.UpdatedAt = db.Timestamp{Time: list.UpdatedAt}
 		l.Items = nil
 		for i := range list.Items {
 			item := &list.Items[i]
@@ -105,21 +107,7 @@ func syncList(l *LetterboxdList) error {
 			})
 		}
 
-		if err := UpsertList(l); err != nil {
-			return err
-		}
-
-		if l.HasUnfetchedItems() {
-			if err := listCache.AddWithLifetime(getListCacheKey(l), *l, l.StaleIn()); err != nil {
-				return err
-			}
-		} else {
-			if err := listCache.Add(getListCacheKey(l), *l); err != nil {
-				return err
-			}
-		}
-
-		return nil
+		return UpsertList(l)
 	}
 
 	client := GetSystemClient()
@@ -153,8 +141,9 @@ func syncList(l *LetterboxdList) error {
 		l.Description = list.Description
 		l.Private = false // list.SharePolicy != SharePolicyAnyone
 		l.ItemCount = list.FilmCount
-		l.Items = nil
 	}
+	l.Items = nil
+	l.UpdatedAt = db.Timestamp{Time: time.Now()}
 
 	hasMore := true
 	perPage := 100
@@ -245,27 +234,18 @@ func syncList(l *LetterboxdList) error {
 		time.Sleep(200 * time.Millisecond)
 	}
 
-	if err := UpsertList(l); err != nil {
-		return err
-	}
-
-	if err := listCache.Add(getListCacheKey(l), *l); err != nil {
-		return err
-	}
-
-	if l.HasUnfetchedItems() {
-		log.Info("list is not fully synced, queuing for sync", "id", l.Id, "item_count", l.ItemCount, "fetched_item_count", len(l.Items))
-		worker_queue.LetterboxdListSyncerQueue.Queue(worker_queue.LetterboxdListSyncerQueueItem{
-			ListId: l.Id,
-		})
-	}
-
-	return nil
+	return UpsertList(l)
 }
 
 func (l *LetterboxdList) Fetch() error {
 	if l.Id == "" {
 		return errors.New("id must be provided")
+	}
+
+	if l.IsUserWatchlist() {
+		if l.UserId == "" {
+			l.UserId = strings.TrimPrefix(l.Id, ID_PREFIX_USER_WATCHLIST)
+		}
 	}
 
 	isMissing := false
@@ -287,11 +267,18 @@ func (l *LetterboxdList) Fetch() error {
 	}
 
 	if isMissing {
-		return syncList(l)
+		if err := syncList(l); err != nil {
+			return err
+		}
 	}
 
-	if l.IsStale() || l.HasUnfetchedItems() {
-		log.Info("queueing list for sync", "id", l.Id, "item_count", l.ItemCount, "fetched_item_count", len(l.Items))
+	if err := listCache.Add(getListCacheKey(l), *l); err != nil {
+		return err
+	}
+
+	is_stale := l.IsStale()
+	if is_stale || l.HasUnfetchedItems() {
+		log.Info("queueing list for sync", "id", l.Id, "item_count", l.ItemCount, "fetched_item_count", len(l.Items), "is_stale", is_stale)
 		worker_queue.LetterboxdListSyncerQueue.Queue(worker_queue.LetterboxdListSyncerQueueItem{
 			ListId: l.Id,
 		})

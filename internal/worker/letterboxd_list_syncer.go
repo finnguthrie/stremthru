@@ -58,6 +58,7 @@ func InitSyncLetterboxdList(conf *WorkerConfig) *Worker {
 				l.Description = list.Description
 				l.Private = list.IsPrivate
 				l.ItemCount = list.ItemCount
+				l.UpdatedAt = db.Timestamp{Time: list.UpdatedAt}
 				l.Items = nil
 				for i := range list.Items {
 					item := &list.Items[i]
@@ -86,11 +87,11 @@ func InitSyncLetterboxdList(conf *WorkerConfig) *Worker {
 				return nil
 			}
 
-			items := []letterboxd.LetterboxdItem{}
-
 			client := letterboxd.GetSystemClient()
 
-			if l.IsUserWatchlist() {
+			isUserWatchlist := l.IsUserWatchlist()
+
+			if isUserWatchlist {
 				res, err := client.FetchMemberStatistics(&letterboxd.FetchMemberStatisticsParams{
 					Id: l.UserId,
 				})
@@ -100,6 +101,8 @@ func InitSyncLetterboxdList(conf *WorkerConfig) *Worker {
 				l.ItemCount = res.Data.Counts.Watchlist
 			}
 
+			items := []letterboxd.LetterboxdItem{}
+
 			hasMore := true
 			perPage := 100
 			page := 0
@@ -107,14 +110,21 @@ func InitSyncLetterboxdList(conf *WorkerConfig) *Worker {
 			for hasMore && len(items) < letterboxd.MAX_LIST_ITEM_COUNT {
 				page++
 				log.Debug("fetching list items", "id", l.Id, "page", page)
-				if l.IsUserWatchlist() {
+				if isUserWatchlist {
 					res, err := client.FetchMemberWatchlist(&letterboxd.FetchMemberWatchlistParams{
 						Id:      l.UserId,
 						Cursor:  cursor,
 						PerPage: perPage,
 					})
 					if err != nil {
-						log.Error("failed to fetch list items", "error", err, "id", l.Id)
+						if res.StatusCode == http.StatusTooManyRequests {
+							duration := client.GetRetryAfter()
+							log.Warn("rate limited, cooling down", "duration", duration, "id", l.Id, "page", page)
+							time.Sleep(duration)
+							page--
+							continue
+						}
+						log.Error("failed to fetch list items", "error", err, "id", l.Id, "page", page)
 						return err
 					}
 					now := time.Now()
@@ -189,6 +199,7 @@ func InitSyncLetterboxdList(conf *WorkerConfig) *Worker {
 			}
 
 			l.Items = items
+			l.UpdatedAt = db.Timestamp{Time: time.Now()}
 
 			if err := letterboxd.UpsertList(l); err != nil {
 				return err

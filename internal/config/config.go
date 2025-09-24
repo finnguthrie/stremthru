@@ -878,9 +878,13 @@ func PrintConfig(state *AppState) {
 				l.Println("              password: " + "*******")
 			}
 		case "letterboxd.com":
+			hasIntegration := true
 			info := ""
 			if Integration.Letterboxd.IsPiggybacked() {
 				info = " (piggybacked)"
+			} else if !Integration.Letterboxd.IsEnabled() {
+				hasIntegration = false
+				info = " (disabled)"
 			}
 			l.Println("   - " + integration + info)
 			if Integration.Letterboxd.IsEnabled() {
@@ -888,7 +892,9 @@ func PrintConfig(state *AppState) {
 				l.Println("         client_secret: " + Integration.Letterboxd.ClientSecret[0:3] + "..." + Integration.Letterboxd.ClientSecret[len(Integration.Letterboxd.ClientSecret)-3:])
 				l.Println("            user_agent: " + Integration.Letterboxd.UserAgent)
 			}
-			l.Println("       list stale time: " + Integration.Letterboxd.ListStaleTime.String())
+			if hasIntegration {
+				l.Println("       list stale time: " + Integration.Letterboxd.ListStaleTime.String())
+			}
 		case "mdblist.com":
 			l.Println("   - " + integration)
 			l.Println("       list stale time: " + Integration.MDBList.ListStaleTime.String())

@@ -11,7 +11,12 @@ type LetterboxdListSyncerQueueItem struct {
 }
 
 var LetterboxdListSyncerQueue = WorkerQueue[LetterboxdListSyncerQueueItem]{
-	debounceTime: 60 * time.Second,
+	debounceTime: func() time.Duration {
+		if config.Integration.Letterboxd.IsEnabled() {
+			return 1 * time.Minute
+		}
+		return 5 * time.Minute
+	}(),
 	getKey: func(item LetterboxdListSyncerQueueItem) string {
 		return item.ListId
 	},

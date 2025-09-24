@@ -291,8 +291,8 @@ func GetListItems(listId string) ([]LetterboxdItem, error) {
 var query_upsert_list = fmt.Sprintf(
 	`INSERT INTO %s (%s) VALUES (%s) ON CONFLICT (%s) DO UPDATE SET %s`,
 	ListTableName,
-	strings.Join(ListColumns[:len(ListColumns)-1], ", "),
-	util.RepeatJoin("?", len(ListColumns)-1, ", "),
+	strings.Join(ListColumns, ", "),
+	util.RepeatJoin("?", len(ListColumns), ", "),
 	ListColumn.Id,
 	strings.Join([]string{
 		fmt.Sprintf(`%s = EXCLUDED.%s`, ListColumn.UserId, ListColumn.UserId),
@@ -302,7 +302,7 @@ var query_upsert_list = fmt.Sprintf(
 		fmt.Sprintf(`%s = EXCLUDED.%s`, ListColumn.Description, ListColumn.Description),
 		fmt.Sprintf(`%s = EXCLUDED.%s`, ListColumn.Private, ListColumn.Private),
 		fmt.Sprintf(`%s = EXCLUDED.%s`, ListColumn.ItemCount, ListColumn.ItemCount),
-		fmt.Sprintf(`%s = %s`, ListColumn.UpdatedAt, db.CurrentTimestamp),
+		fmt.Sprintf(`%s = EXCLUDED.%s`, ListColumn.UpdatedAt, ListColumn.UpdatedAt),
 	}, ", "),
 )
 
@@ -320,6 +320,9 @@ func UpsertList(list *LetterboxdList) (err error) {
 		err = errors.Join(tErr, err)
 	}()
 
+	if list.UpdatedAt.IsZero() {
+		list.UpdatedAt = db.Timestamp{Time: time.Now()}
+	}
 	_, err = tx.Exec(
 		query_upsert_list,
 		list.Id,
@@ -330,12 +333,11 @@ func UpsertList(list *LetterboxdList) (err error) {
 		list.Description,
 		list.Private,
 		list.ItemCount,
+		list.UpdatedAt,
 	)
 	if err != nil {
 		return err
 	}
-
-	list.UpdatedAt = db.Timestamp{Time: time.Now()}
 
 	err = upsertItems(tx, list.Items)
 	if err != nil {
@@ -353,11 +355,11 @@ func UpsertList(list *LetterboxdList) (err error) {
 var query_upsert_items_before_values = fmt.Sprintf(
 	`INSERT INTO %s (%s) VALUES `,
 	ItemTableName,
-	strings.Join(ItemColumns[:len(ItemColumns)-1], ", "),
+	strings.Join(ItemColumns, ", "),
 )
 var query_upsert_items_values_placholder = fmt.Sprintf(
 	`(%s)`,
-	util.RepeatJoin("?", len(ItemColumns)-1, ","),
+	util.RepeatJoin("?", len(ItemColumns), ","),
 )
 var query_upsert_items_after_values = fmt.Sprintf(
 	` ON CONFLICT (%s) DO UPDATE SET %s`,
@@ -369,7 +371,7 @@ var query_upsert_items_after_values = fmt.Sprintf(
 		fmt.Sprintf(`%s = EXCLUDED.%s`, ItemColumn.Rating, ItemColumn.Rating),
 		fmt.Sprintf(`%s = EXCLUDED.%s`, ItemColumn.Adult, ItemColumn.Adult),
 		fmt.Sprintf(`%s = EXCLUDED.%s`, ItemColumn.Poster, ItemColumn.Poster),
-		fmt.Sprintf(`%s = %s`, ItemColumn.UpdatedAt, db.CurrentTimestamp),
+		fmt.Sprintf(`%s = EXCLUDED.%s`, ItemColumn.UpdatedAt, ItemColumn.UpdatedAt),
 	}, ", "),
 )
 
@@ -378,16 +380,21 @@ func upsertItems(tx db.Executor, items []LetterboxdItem) error {
 		return nil
 	}
 
-	for cItems := range slices.Chunk(items, 500) {
+	now := time.Now()
+
+	for cItems := range slices.Chunk(items, 250) {
 		count := len(cItems)
 
 		query := query_upsert_items_before_values +
 			util.RepeatJoin(query_upsert_items_values_placholder, count, ",") +
 			query_upsert_items_after_values
 
-		columnCount := len(ItemColumns) - 1
+		columnCount := len(ItemColumns)
 		args := make([]any, count*columnCount)
 		for i, item := range cItems {
+			if item.UpdatedAt.IsZero() {
+				item.UpdatedAt = db.Timestamp{Time: now}
+			}
 			args[i*columnCount+0] = item.Id
 			args[i*columnCount+1] = item.Name
 			args[i*columnCount+2] = item.ReleaseYear
@@ -395,6 +402,7 @@ func upsertItems(tx db.Executor, items []LetterboxdItem) error {
 			args[i*columnCount+4] = item.Rating
 			args[i*columnCount+5] = item.Adult
 			args[i*columnCount+6] = item.Poster
+			args[i*columnCount+7] = item.UpdatedAt
 		}
 
 		_, err := tx.Exec(query, args...)
