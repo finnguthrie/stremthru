@@ -71,6 +71,10 @@ func toList(l *letterboxd.LetterboxdList) (*meta_type.List, error) {
 					MAL: idMap.MALId,
 				}
 			}
+			switch item.IdMap.Type {
+			case meta_type.IdTypeShow:
+				item.Type = meta_type.ItemTypeShow
+			}
 		}
 	}
 
