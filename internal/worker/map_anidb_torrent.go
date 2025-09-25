@@ -269,6 +269,14 @@ func prepareAniDBTorrentMaps(tvdbMaps anidb.AniDBTVDBEpisodeMaps, titles anidb.A
 								} else if tEpisodeCount > 1 {
 									isTVSeason = tvEpiStart == tFirstEpisode && tLastEpisode == tvEpiEnd
 								}
+							} else if tvdbMap.End != 0 {
+								tvEpiEnd := tvdbMap.TVDBEpisodeEnd()
+								isTVSeason = tLastEpisode <= tvEpiEnd
+							} else if tvdbMap.Start != 0 {
+								tvEpiStart := tvdbMap.TVDBEpisodeStart()
+								isTVSeason = tvEpiStart <= tFirstEpisode
+							} else if tvdbMap.Offset != 0 {
+								isTVSeason = tvdbMap.TVDBEpisodeStart() < tFirstEpisode
 							}
 						}
 					}
@@ -330,6 +338,10 @@ func prepareAniDBTorrentMaps(tvdbMaps anidb.AniDBTVDBEpisodeMaps, titles anidb.A
 						} else if hasEpisodes {
 							if !anidbGroup.TVDBEpisodeMaps.HasSplitedTVSeasons() {
 								animeTMap.episodeStart, animeTMap.episodeEnd = tFirstEpisode, tLastEpisode
+								if tvdbMap.Offset != 0 {
+									animeTMap.episodeStart -= tvdbMap.Offset
+									animeTMap.episodeEnd -= tvdbMap.Offset
+								}
 							}
 						}
 
@@ -505,9 +517,32 @@ func prepareAniDBTorrentMaps(tvdbMaps anidb.AniDBTVDBEpisodeMaps, titles anidb.A
 
 			title := titles[0]
 
-			aniTMapIdx := -1
+			hasJoinedTVSeasons := tvdbMaps.HasJoinedTVSeasons()
+			hasSplitedTVSeasons := tvdbMaps.HasSplitedTVSeasons()
+			targetTVDBSeason := 0
+			targetAniDBIds := util.NewSet[string]()
+			for _, t := range titles {
+				if title.TId == t.TId || title.Season == t.Season {
+					targetAniDBIds.Add(t.TId)
+				}
+			}
 			for _, tvdbMap := range tvdbMaps {
-				if title.TId != tvdbMap.AniDBId || tvdbMap.AniDBSeason != 1 {
+				if tvdbMap.AniDBId == title.TId && tvdbMap.AniDBSeason == 1 {
+					targetTVDBSeason = tvdbMap.TVDBSeason
+				}
+			}
+
+			aniTMapIndexByAniDBId := map[string]int{}
+
+			for _, tvdbMap := range tvdbMaps {
+				if !targetAniDBIds.Has(tvdbMap.AniDBId) || tvdbMap.AniDBSeason != 1 {
+					continue
+				}
+				if hasJoinedTVSeasons {
+					if tvdbMap.TVDBSeason != targetTVDBSeason {
+						continue
+					}
+				} else if tvdbMap.AniDBId != title.TId {
 					continue
 				}
 
@@ -525,16 +560,34 @@ func prepareAniDBTorrentMaps(tvdbMaps anidb.AniDBTVDBEpisodeMaps, titles anidb.A
 				}
 				if start <= end {
 					animeSeason := titles.GetSeason(tvdbMap.AniDBId)
-					if animeSeason != -1 && aniTMapIdx == -1 {
-						tMap := torrentMap{
-							anidbId:      tvdbMap.AniDBId,
-							seasonType:   anidb.TorrentSeasonTypeAnime,
-							season:       animeSeason,
-							episodeStart: tFirstEpisode,
-							episodeEnd:   tLastEpisode,
+					if animeSeason != -1 {
+						var aniTMap *torrentMap
+						if aniTMapIdx, ok := aniTMapIndexByAniDBId[tvdbMap.AniDBId]; ok {
+							aniTMap = &tMaps[aniTMapIdx]
+						} else {
+							tMaps = append(tMaps, torrentMap{
+								anidbId:    tvdbMap.AniDBId,
+								seasonType: anidb.TorrentSeasonTypeAnime,
+								season:     animeSeason,
+							})
+							aniTMapIdx = len(tMaps) - 1
+							aniTMapIndexByAniDBId[tvdbMap.AniDBId] = aniTMapIdx
+							aniTMap = &tMaps[aniTMapIdx]
 						}
-						tMaps = append(tMaps, tMap)
-						aniTMapIdx = len(tMaps) - 1
+						if hasSplitedTVSeasons {
+							if aniTMap.episodeStart == 0 {
+								aniTMap.episodeStart = start + tvdbMap.Offset
+							}
+							aniTMap.episodeEnd = end
+						} else if hasJoinedTVSeasons {
+							if aniTMap.episodeStart == 0 {
+								aniTMap.episodeStart = start - tvdbMap.Offset
+							}
+							aniTMap.episodeEnd = end - tvdbMap.Offset
+						} else {
+							aniTMap.episodeStart = start
+							aniTMap.episodeEnd = end
+						}
 					}
 
 					tMap := torrentMap{

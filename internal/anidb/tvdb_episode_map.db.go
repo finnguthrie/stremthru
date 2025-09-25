@@ -332,6 +332,22 @@ func (ms AniDBTVDBEpisodeMaps) HasSplitedTVSeasons() bool {
 	return false
 }
 
+// single tv season for the splitted anime seasons
+func (ms AniDBTVDBEpisodeMaps) HasJoinedTVSeasons() bool {
+	seenTVDBSeason := util.NewSet[int]()
+	for i := range ms {
+		m := &ms[i]
+		if m.TVDBSeason < 1 || m.AniDBSeason < 1 {
+			continue
+		}
+		if seenTVDBSeason.Has(m.TVDBSeason) {
+			return true
+		}
+		seenTVDBSeason.Add(m.TVDBSeason)
+	}
+	return false
+}
+
 func (ms AniDBTVDBEpisodeMaps) AreAbsoluteEpisode(episodes ...int) bool {
 	hasAbsoluteOrder := false
 	var largestNormalEpisode int
@@ -358,19 +374,30 @@ func (ms AniDBTVDBEpisodeMaps) AreAbsoluteEpisode(episodes ...int) bool {
 
 type tvdbEpisodeMapByAniDBId struct {
 	AniDBId         string
+	Part            int
 	TVDBEpisodeMaps AniDBTVDBEpisodeMaps
 }
 
 func (ms AniDBTVDBEpisodeMaps) GroupByAniDBId() []tvdbEpisodeMapByAniDBId {
 	byAniDBId := []tvdbEpisodeMapByAniDBId{}
 	idx := -1
+	partByTvdbSeason := map[string]int{}
 	for _, m := range ms {
 		if idx == -1 || byAniDBId[idx].AniDBId != m.AniDBId {
 			idx++
 		}
 		if len(byAniDBId) == idx {
+			key := strconv.Itoa(m.TVDBSeason)
+			if lastPart, ok := partByTvdbSeason[key]; ok {
+				partByTvdbSeason[key] = lastPart + 1
+			} else {
+				partByTvdbSeason[key] = 1
+			}
+			part := partByTvdbSeason[key]
+
 			byAniDBId = append(byAniDBId, tvdbEpisodeMapByAniDBId{
 				AniDBId: m.AniDBId,
+				Part:    part,
 			})
 		}
 		byAniDBId[idx].TVDBEpisodeMaps = append(byAniDBId[idx].TVDBEpisodeMaps, m)
