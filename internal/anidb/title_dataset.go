@@ -45,12 +45,36 @@ func (a *AnimeTitleDatasetItem) Equal(b *AnimeTitleDatasetItem) bool {
 	return true
 }
 
+type detectedSeasonCountMap map[string]int
+
+func (dscm detectedSeasonCountMap) Season() string {
+	season := ""
+	maxCount := 0
+	for s, count := range dscm {
+		if count > maxCount {
+			season = s
+			maxCount = count
+		}
+	}
+	if season == "" {
+		season = "1"
+	}
+	return season
+}
+
+func (dscm detectedSeasonCountMap) Count(season string) {
+	if _, ok := dscm[season]; !ok {
+		dscm[season] = 0
+	}
+	dscm[season] += 1
+}
+
 func SyncTitleDataset() error {
 	log := logger.Scoped("anidb/dataset/titles")
 
 	regexEnglishWithYear := regexp.MustCompile(`(?i) \(((?:19|20)\d{2})\)$`)
 	regexEnglishWithS := regexp.MustCompile(`(?i) S(\d+)$`)
-	regexEnglishWithSeason := regexp.MustCompile(`(?i):? \(?Season (\d+)\)?\b`)
+	regexWithSeason := regexp.MustCompile(`(?i):? \(?(?:Season|Saison|Stagione|Temporada|ภาคที่) (\d+)\)?\b`)
 	regexWithOrdinalSuffixSeason := regexp.MustCompile(`(?i) (\d+)(?:st|nd|rd|th) Season\b`)
 	regexPunctuation := regexp.MustCompile(`(?i)\p{P}`)
 	regexWhitespaces := regexp.MustCompile(`(?i)\s+`)
@@ -98,7 +122,8 @@ func SyncTitleDataset() error {
 					var pinyinSynTitle *AnimeTitleDatasetItemTitle
 					var englishTitle *AnimeTitleDatasetItemTitle
 					itemTitles := []AniDBTitle{}
-					season, year := "", ""
+					detectedSeason := detectedSeasonCountMap{}
+					year := ""
 
 					seenAltMap := map[string]struct{}{}
 					synAltIdx := 0
@@ -109,54 +134,59 @@ func SyncTitleDataset() error {
 						t := &item.Titles[i]
 						switch t.Type {
 						case "main":
-							mainTitle = &*t
+							title := *t
+							mainTitle = &title
 						case "official":
 							if t.Lang == "en" {
-								englishTitle = &*t
+								title := *t
+								englishTitle = &title
 							}
 
 						case "syn":
 							if t.Lang == "en" {
 								if englishTitle == nil || (englishTitle.Type == t.Type && len(englishTitle.Value) < len(t.Value)) {
-									englishTitle = &*t
+									title := *t
+									englishTitle = &title
 								}
 							}
 
 						default:
 							shouldAppend = false
 						}
+
 						if year == "" {
 							if match := regexEnglishWithYear.FindStringSubmatch(t.Value); len(match) > 1 {
 								year = match[1]
 							}
 						}
-						switch t.Lang {
-						case "en", "x-jat", "x-zht":
-							if season == "" {
-								var match []string
-								if regexEnglishWithS.MatchString(t.Value) {
-									match = regexEnglishWithS.FindStringSubmatch(t.Value)
-								} else if regexEnglishWithSeason.MatchString(t.Value) {
-									match = regexEnglishWithSeason.FindStringSubmatch(t.Value)
-								} else if regexWithOrdinalSuffixSeason.MatchString(t.Value) {
-									match = regexWithOrdinalSuffixSeason.FindStringSubmatch(t.Value)
-								}
-								if len(match) > 1 {
-									season = match[1]
+
+						if t.Type != "short" {
+							var seasonMatch []string
+							if regexEnglishWithS.MatchString(t.Value) {
+								seasonMatch = regexEnglishWithS.FindStringSubmatch(t.Value)
+							} else if regexWithSeason.MatchString(t.Value) {
+								seasonMatch = regexWithSeason.FindStringSubmatch(t.Value)
+							} else if regexWithOrdinalSuffixSeason.MatchString(t.Value) {
+								seasonMatch = regexWithOrdinalSuffixSeason.FindStringSubmatch(t.Value)
+							}
+							if len(seasonMatch) > 1 {
+								season := seasonMatch[1]
+								season = strings.TrimSpace(season)
+								if season != "0" && !strings.HasPrefix(season, "0") && len(season) <= 2 {
+									detectedSeason.Count(season)
 
 									if t.Type == "syn" {
-										if t.Lang == "x-jat" {
-											romajiSynTitle = &*t
-										} else if t.Lang == "x-zht" {
-											pinyinSynTitle = &*t
+										switch t.Lang {
+										case "x-jat":
+											title := *t
+											romajiSynTitle = &title
+										case "x-zht":
+											title := *t
+											pinyinSynTitle = &title
 										}
 									}
 								}
 							}
-						}
-						season = strings.TrimSpace(season)
-						if season == "0" || strings.HasPrefix(season, "0") || len(season) > 2 {
-							season = ""
 						}
 
 						if !shouldAppend {
@@ -188,13 +218,11 @@ func SyncTitleDataset() error {
 							TLang: t.Lang,
 							Value: t.Value,
 						}
-						title.Value = regexWithOrdinalSuffixSeason.ReplaceAllLiteralString(regexEnglishWithSeason.ReplaceAllLiteralString(regexEnglishWithS.ReplaceAllLiteralString(regexEnglishWithYear.ReplaceAllLiteralString(title.Value, ""), ""), ""), "")
+						title.Value = regexWithOrdinalSuffixSeason.ReplaceAllLiteralString(regexWithSeason.ReplaceAllLiteralString(regexEnglishWithS.ReplaceAllLiteralString(regexEnglishWithYear.ReplaceAllLiteralString(title.Value, ""), ""), ""), "")
 						title.Value = regexWhitespaces.ReplaceAllLiteralString(regexPunctuation.ReplaceAllLiteralString(title.Value, " "), " ")
 						itemTitles = append(itemTitles, title)
 					}
-					if season == "" {
-						season = "1"
-					}
+					season := detectedSeason.Season()
 					for i := range itemTitles {
 						t := &itemTitles[i]
 						t.Season = season
