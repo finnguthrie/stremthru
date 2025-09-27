@@ -332,22 +332,6 @@ func (ms AniDBTVDBEpisodeMaps) HasSplitedTVSeasons() bool {
 	return false
 }
 
-// single tv season for the splitted anime seasons
-func (ms AniDBTVDBEpisodeMaps) HasJoinedTVSeasons() bool {
-	seenTVDBSeason := util.NewSet[int]()
-	for i := range ms {
-		m := &ms[i]
-		if m.TVDBSeason < 1 || m.AniDBSeason < 1 {
-			continue
-		}
-		if seenTVDBSeason.Has(m.TVDBSeason) {
-			return true
-		}
-		seenTVDBSeason.Add(m.TVDBSeason)
-	}
-	return false
-}
-
 func (ms AniDBTVDBEpisodeMaps) AreAbsoluteEpisode(episodes ...int) bool {
 	hasAbsoluteOrder := false
 	var largestNormalEpisode int
@@ -370,39 +354,6 @@ func (ms AniDBTVDBEpisodeMaps) AreAbsoluteEpisode(episodes ...int) bool {
 		}
 	}
 	return false
-}
-
-type tvdbEpisodeMapByAniDBId struct {
-	AniDBId         string
-	Part            int
-	TVDBEpisodeMaps AniDBTVDBEpisodeMaps
-}
-
-func (ms AniDBTVDBEpisodeMaps) GroupByAniDBId() []tvdbEpisodeMapByAniDBId {
-	byAniDBId := []tvdbEpisodeMapByAniDBId{}
-	idx := -1
-	partByTvdbSeason := map[string]int{}
-	for _, m := range ms {
-		if idx == -1 || byAniDBId[idx].AniDBId != m.AniDBId {
-			idx++
-		}
-		if len(byAniDBId) == idx {
-			key := strconv.Itoa(m.TVDBSeason)
-			if lastPart, ok := partByTvdbSeason[key]; ok {
-				partByTvdbSeason[key] = lastPart + 1
-			} else {
-				partByTvdbSeason[key] = 1
-			}
-			part := partByTvdbSeason[key]
-
-			byAniDBId = append(byAniDBId, tvdbEpisodeMapByAniDBId{
-				AniDBId: m.AniDBId,
-				Part:    part,
-			})
-		}
-		byAniDBId[idx].TVDBEpisodeMaps = append(byAniDBId[idx].TVDBEpisodeMaps, m)
-	}
-	return byAniDBId
 }
 
 func (ms AniDBTVDBEpisodeMaps) GetAniDBTitles() ([]AniDBTitle, error) {
@@ -448,7 +399,86 @@ var query_get_tvdb_episode_maps_by_anidbid_with_related = fmt.Sprintf(
 	TVDBEpisodeMapColumn.AniDBId,
 )
 
-func GetTVDBEpisodeMaps(anidbId string, includeRelated bool) (AniDBTVDBEpisodeMaps, error) {
+type AniDBTVDBEpisodeMapsResult struct {
+	AniDBTVDBEpisodeMaps
+	groupedByAniDBId []tvdbEpisodeMapByAniDBId
+	idxByAniDBId     map[string]int
+}
+
+func (r AniDBTVDBEpisodeMapsResult) Val() AniDBTVDBEpisodeMaps {
+	return r.AniDBTVDBEpisodeMaps
+}
+
+func (r AniDBTVDBEpisodeMapsResult) Len() int {
+	return len(r.AniDBTVDBEpisodeMaps)
+}
+
+type tvdbEpisodeMapByAniDBId struct {
+	AniDBId         string
+	Part            int
+	TVDBEpisodeMaps AniDBTVDBEpisodeMaps
+}
+
+func (r *AniDBTVDBEpisodeMapsResult) GroupByAniDBId() []tvdbEpisodeMapByAniDBId {
+	if r.groupedByAniDBId != nil {
+		return r.groupedByAniDBId
+	}
+	groupedByAniDBId := []tvdbEpisodeMapByAniDBId{}
+	idx := -1
+	partByTvdbSeason := map[string]int{}
+	for _, m := range r.AniDBTVDBEpisodeMaps {
+		if idx == -1 || groupedByAniDBId[idx].AniDBId != m.AniDBId {
+			idx++
+		}
+		if len(groupedByAniDBId) == idx {
+			part := 0
+			key := strconv.Itoa(m.TVDBSeason)
+			if m.TVDBSeason > 0 && m.AniDBSeason > 0 {
+				if lastPart, ok := partByTvdbSeason[key]; ok {
+					partByTvdbSeason[key] = lastPart + 1
+				} else {
+					partByTvdbSeason[key] = 1
+				}
+				part = partByTvdbSeason[key]
+			}
+
+			groupedByAniDBId = append(groupedByAniDBId, tvdbEpisodeMapByAniDBId{
+				AniDBId: m.AniDBId,
+				Part:    part,
+			})
+		}
+		groupedByAniDBId[idx].TVDBEpisodeMaps = append(groupedByAniDBId[idx].TVDBEpisodeMaps, m)
+	}
+	r.groupedByAniDBId = groupedByAniDBId
+	r.idxByAniDBId = map[string]int{}
+	for idx := range groupedByAniDBId {
+		r.idxByAniDBId[groupedByAniDBId[idx].AniDBId] = idx
+	}
+	return groupedByAniDBId
+}
+
+func (r *AniDBTVDBEpisodeMapsResult) GetByAniDBId(anidbId string) *tvdbEpisodeMapByAniDBId {
+	if r.idxByAniDBId == nil {
+		r.GroupByAniDBId()
+	}
+	if idx, ok := r.idxByAniDBId[anidbId]; ok {
+		return &r.groupedByAniDBId[idx]
+	}
+	return nil
+}
+
+// single tv season for the splitted anime seasons
+func (r *AniDBTVDBEpisodeMapsResult) HasJoinedTVSeasons() bool {
+	groupedByAniDBId := r.GroupByAniDBId()
+	for i := range groupedByAniDBId {
+		if groupedByAniDBId[i].Part > 1 {
+			return true
+		}
+	}
+	return false
+}
+
+func GetTVDBEpisodeMaps(anidbId string, includeRelated bool) (*AniDBTVDBEpisodeMapsResult, error) {
 	query := query_get_tvdb_episode_maps_by_anidbid
 	if includeRelated {
 		query = query_get_tvdb_episode_maps_by_anidbid_with_related
@@ -481,5 +511,5 @@ func GetTVDBEpisodeMaps(anidbId string, includeRelated bool) (AniDBTVDBEpisodeMa
 		maps = append(maps, m)
 	}
 	maps.Sort()
-	return maps, nil
+	return &AniDBTVDBEpisodeMapsResult{AniDBTVDBEpisodeMaps: maps}, nil
 }

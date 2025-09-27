@@ -1348,10 +1348,10 @@ func TestPrepareAniDBTVDBEpisodeMaps(t *testing.T) {
 	} {
 		t.Run(tc.tvdbId, func(t *testing.T) {
 			result := PrepareAniDBTVDBEpisodeMaps(tc.tvdbId, tc.items)
-			assert.Len(t, result, len(tc.result))
+			assert.Len(t, result.Val(), len(tc.result))
 			for i := range tc.result {
 				r := tc.result[i]
-				assert.Equal(t, r, result[i], strconv.Itoa(i)+"-"+r.AniDBId+":"+r.TVDBId+":"+strconv.Itoa(r.AniDBSeason)+":"+strconv.Itoa(r.TVDBSeason))
+				assert.Equal(t, r, result.Val()[i], strconv.Itoa(i)+"-"+r.AniDBId+":"+r.TVDBId+":"+strconv.Itoa(r.AniDBSeason)+":"+strconv.Itoa(r.TVDBSeason))
 			}
 		})
 	}

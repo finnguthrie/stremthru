@@ -34,6 +34,8 @@ type StreamFileMatcher struct {
 	UseLargestFile bool
 	Episode        int
 	Season         int
+	AniDBId        string
+	EpisodeMaps    *anidb.AniDBTVDBEpisodeMapsResult
 
 	IdR        *ParsedId
 	IdPrefix   string
@@ -258,6 +260,12 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		tvdbEpisodeMaps, err := anidb.GetTVDBEpisodeMaps(anidbId, true)
+		if err != nil {
+			SendError(w, r, err)
+			return
+		}
+
 		var wg sync.WaitGroup
 
 		idPrefixes := ud.getIdPrefixes()
@@ -307,9 +315,11 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 					item := &items[i]
 					id := strings.TrimPrefix(item.Id, idPrefix)
 					matcherResults[idx] = append(matcherResults[idx], StreamFileMatcher{
-						MagnetId: id,
-						Season:   util.SafeParseInt(season, -1),
-						Episode:  util.SafeParseInt(episode, -1),
+						MagnetId:    id,
+						Season:      util.SafeParseInt(season, -1),
+						Episode:     util.SafeParseInt(episode, -1),
+						AniDBId:     anidbId,
+						EpisodeMaps: tvdbEpisodeMaps,
 
 						IdPrefix:   idPrefix,
 						IdR:        idr,
@@ -407,11 +417,26 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 							} else if tEpisode != -1 {
 								r.Episodes = append(r.Episodes, tEpisode)
 							}
-							if tSeason == -1 && fEpisode == matcher.Episode {
+							targetEpisode := matcher.Episode
+							if matcher.EpisodeMaps.HasJoinedTVSeasons() {
+								tvdbMap := matcher.EpisodeMaps.GetByAniDBId(matcher.AniDBId)
+								if tvdbMap != nil && tvdbMap.Part > 0 {
+									for i := range tvdbMap.TVDBEpisodeMaps {
+										if tvdbMap.TVDBEpisodeMaps[i].TVDBSeason == matcher.Season {
+											offset := tvdbMap.TVDBEpisodeMaps[i].Offset
+											if offset > 0 {
+												targetEpisode += tvdbMap.TVDBEpisodeMaps[i].Offset
+											}
+											break
+										}
+									}
+								}
+							}
+							if tSeason == -1 && fEpisode == targetEpisode {
 								file = f
 								season, episode = fSeason, fEpisode
 								break
-							} else if fSeason == matcher.Season && fEpisode == matcher.Episode {
+							} else if fSeason == matcher.Season && fEpisode == targetEpisode {
 								file = f
 								season, episode = fSeason, fEpisode
 								break

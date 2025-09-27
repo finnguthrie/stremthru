@@ -62,7 +62,7 @@ func sortAniDBTitles(titles anidb.AniDBTitles, tInfo torrent_info.TorrentInfo, t
 	return titles
 }
 
-func prepareAniDBTorrentMaps(tvdbMaps anidb.AniDBTVDBEpisodeMaps, titles anidb.AniDBTitles, tInfo torrent_info.TorrentInfo) ([]torrentMap, error) {
+func prepareAniDBTorrentMaps(tvdbMaps *anidb.AniDBTVDBEpisodeMapsResult, titles anidb.AniDBTitles, tInfo torrent_info.TorrentInfo) ([]torrentMap, error) {
 	tSeasonCount, tEpisodeCount := len(tInfo.Seasons), len(tInfo.Episodes)
 
 	tMaps := []torrentMap{}
@@ -526,7 +526,7 @@ func prepareAniDBTorrentMaps(tvdbMaps anidb.AniDBTVDBEpisodeMaps, titles anidb.A
 					targetAniDBIds.Add(t.TId)
 				}
 			}
-			for _, tvdbMap := range tvdbMaps {
+			for _, tvdbMap := range tvdbMaps.Val() {
 				if tvdbMap.AniDBId == title.TId && tvdbMap.AniDBSeason == 1 {
 					targetTVDBSeason = tvdbMap.TVDBSeason
 				}
@@ -534,7 +534,7 @@ func prepareAniDBTorrentMaps(tvdbMaps anidb.AniDBTVDBEpisodeMaps, titles anidb.A
 
 			aniTMapIndexByAniDBId := map[string]int{}
 
-			for _, tvdbMap := range tvdbMaps {
+			for _, tvdbMap := range tvdbMaps.Val() {
 				if !targetAniDBIds.Has(tvdbMap.AniDBId) || tvdbMap.AniDBSeason != 1 {
 					continue
 				}
@@ -704,7 +704,7 @@ func InitMapAniDBTorrentWorker(conf *WorkerConfig) *Worker {
 							continue
 						}
 
-						if len(tvdbMaps) == 0 {
+						if tvdbMaps.Len() == 0 {
 							items = append(items, anidb.AniDBTorrent{
 								Hash: hash,
 							})

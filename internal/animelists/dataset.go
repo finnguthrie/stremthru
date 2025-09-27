@@ -127,7 +127,7 @@ func (a *AnimeListItem) Equal(b *AnimeListItem) bool {
 	return true
 }
 
-func PrepareAniDBTVDBEpisodeMaps(tvdbId string, items []AnimeListItem) []anidb.AniDBTVDBEpisodeMap {
+func PrepareAniDBTVDBEpisodeMaps(tvdbId string, items []AnimeListItem) *anidb.AniDBTVDBEpisodeMapsResult {
 	tvdbMaps := []anidb.AniDBTVDBEpisodeMap{}
 
 	// KEY: tvdb_season, VAL: anidb_part
@@ -328,7 +328,7 @@ func PrepareAniDBTVDBEpisodeMaps(tvdbId string, items []AnimeListItem) []anidb.A
 		}
 	}
 
-	return tvdbMaps
+	return &anidb.AniDBTVDBEpisodeMapsResult{AniDBTVDBEpisodeMaps: tvdbMaps}
 }
 
 func SyncDataset() error {
@@ -415,7 +415,7 @@ func SyncDataset() error {
 
 	for tvdbId, items := range byTVDBId {
 		tvdbMaps := PrepareAniDBTVDBEpisodeMaps(tvdbId, items)
-		if err := anidb.UpsertTVDBEpisodeMaps(tvdbMaps); err != nil {
+		if err := anidb.UpsertTVDBEpisodeMaps(tvdbMaps.Val()); err != nil {
 			return err
 		}
 	}

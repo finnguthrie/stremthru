@@ -32,7 +32,7 @@ func TestPrepareAniDBTorrentsFromTVDBEpisodeMaps(t *testing.T) {
 		return parsed.Items
 	}
 
-	toEpisodeMaps := func(xmlContent string) anidb.AniDBTVDBEpisodeMaps {
+	toEpisodeMaps := func(xmlContent string) *anidb.AniDBTVDBEpisodeMapsResult {
 		items := toAnimeListItems(xmlContent)
 		return animelists.PrepareAniDBTVDBEpisodeMaps(items[0].TVDBId, items)
 	}
@@ -43,7 +43,7 @@ func TestPrepareAniDBTorrentsFromTVDBEpisodeMaps(t *testing.T) {
 	}
 
 	for _, tc := range []struct {
-		tvdbMaps anidb.AniDBTVDBEpisodeMaps
+		tvdbMaps *anidb.AniDBTVDBEpisodeMapsResult
 		titles   []anidb.AniDBTitle
 		cases    []testCase
 	}{
@@ -1625,10 +1625,11 @@ func TestPrepareAniDBTorrentsFromTVDBEpisodeMaps(t *testing.T) {
 		for _, c := range tc.cases {
 			tMaps, err := prepareAniDBTorrentMaps(tc.tvdbMaps, tc.titles, c.tInfo)
 			assert.NoError(t, err)
-			assert.Len(t, tMaps, len(c.result), tc.tvdbMaps[0].TVDBId+" - "+c.tInfo.TorrentTitle)
+			tvdbMaps := tc.tvdbMaps.Val()
+			assert.Len(t, tMaps, len(c.result), tvdbMaps[0].TVDBId+" - "+c.tInfo.TorrentTitle)
 			for i := range c.result {
 				r := c.result[i]
-				assert.Equal(t, r, tMaps[i], tc.tvdbMaps[0].TVDBId+":"+r.anidbId+":"+string(r.seasonType)+":"+strconv.Itoa(r.season))
+				assert.Equal(t, r, tMaps[i], tvdbMaps[0].TVDBId+":"+r.anidbId+":"+string(r.seasonType)+":"+strconv.Itoa(r.season))
 			}
 		}
 	}
