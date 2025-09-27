@@ -6,7 +6,6 @@ import (
 	"github.com/MunifTanjim/stremthru/internal/server"
 	"github.com/MunifTanjim/stremthru/internal/shared"
 	stremio_shared "github.com/MunifTanjim/stremthru/internal/stremio/shared"
-	"github.com/MunifTanjim/stremthru/internal/util"
 )
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
@@ -33,11 +32,6 @@ func handleManifest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	manifest := getManifest(r)
-
-	if manifest.ID == util.MustDecodeBase64("Y29tLmVsZmhvc3RlZC5zdHJlbXRocnU=") {
-		w.WriteHeader(404)
-		return
-	}
 
 	stremio_shared.SendResponse(w, r, 200, manifest)
 }
