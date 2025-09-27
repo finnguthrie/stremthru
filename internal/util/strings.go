@@ -36,23 +36,18 @@ func IsNumericString(s string) bool {
 var quoteRegex = regexp.MustCompile(`['"]+`)
 var separatorRegex = regexp.MustCompile(`[._-]+`)
 
-func normalizeForFuzzySearch(s string) string {
-	s = strings.ToLower(s)
-	s = quoteRegex.ReplaceAllLiteralString(s, "")
-	s = separatorRegex.ReplaceAllLiteralString(s, " ")
-	return fuzzy.Cleanse(s, false)
-}
-
 type StringNormalizer struct {
 	t transform.Transformer
 }
 
 func (sn *StringNormalizer) Normalize(input string) string {
-	input = normalizeForFuzzySearch(input)
+	input = strings.ToLower(input)
+	input = quoteRegex.ReplaceAllLiteralString(input, "")
+	input = separatorRegex.ReplaceAllLiteralString(input, " ")
 	if result, _, err := transform.String(sn.t, input); err == nil {
-		return result
+		input = result
 	}
-	return input
+	return fuzzy.Cleanse(input, false)
 }
 
 func NewStringNormalizer() *StringNormalizer {
