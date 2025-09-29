@@ -475,7 +475,9 @@ func listFolderFlat(c *StoreClient, apiKey string, folderId string, result []sto
 			if err != nil {
 				return nil, err
 			}
-			idx = result[len(result)-1].Idx + 1
+			if len(result) > 0 {
+				idx = result[len(result)-1].Idx + 1
+			}
 		} else {
 			result = append(result, *file)
 			idx++
