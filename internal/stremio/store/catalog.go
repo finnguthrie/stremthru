@@ -42,9 +42,12 @@ func getUsenetCatalogItems(s store.Store, storeToken string, clientIp string, id
 
 	cacheKey := getCatalogCacheKey(idPrefix, storeToken)
 	if !catalogCache.Get(cacheKey, &items) {
+		storeCode := s.GetName().Code()
+
 		offset := 0
 		hasMore := true
 		for hasMore && offset < max_fetch_list_items {
+			start := time.Now()
 			params := &stremio_store_usenet.ListNewsParams{
 				Limit:    fetch_list_limit,
 				Offset:   offset,
@@ -53,11 +56,15 @@ func getUsenetCatalogItems(s store.Store, storeToken string, clientIp string, id
 			params.APIKey = storeToken
 			res, err := stremio_store_usenet.ListNews(params, s.GetName())
 			if err != nil {
-				log.Error("failed to list news", "error", err, "offset", offset)
+				log.Error("failed to list news", "error", err, "duration", time.Since(start).String(), "store_code", storeCode, "offset", offset)
 				break
 			}
+			count := len(res.Items)
+			log.Debug("fetched news", "duration", time.Since(start).String(), "store_code", storeCode, "offset", offset, "count", count)
 
-			for _, item := range res.Items {
+			start = time.Now()
+			for i := range res.Items {
+				item := &res.Items[i]
 				if item.Status == store.MagnetStatusDownloaded {
 					cItem := CachedCatalogItem{stremio.MetaPreview{
 						Id:          idPrefix + item.Id,
@@ -69,9 +76,12 @@ func getUsenetCatalogItems(s store.Store, storeToken string, clientIp string, id
 					items = append(items, cItem)
 				}
 			}
+			log.Debug("processed news", "duration", time.Since(start).String(), "store_code", storeCode, "offset", offset, "count", count)
+
 			offset += fetch_list_limit
 			hasMore = len(res.Items) == fetch_list_limit && offset < res.TotalItems
-			time.Sleep(1 * time.Second)
+
+			time.Sleep(500 * time.Millisecond)
 		}
 		catalogCache.Add(cacheKey, items)
 	}
@@ -84,9 +94,12 @@ func getWebDLCatalogItems(s store.Store, storeToken string, clientIp string, idP
 
 	cacheKey := getCatalogCacheKey(idPrefix, storeToken)
 	if !catalogCache.Get(cacheKey, &items) {
+		storeCode := s.GetName().Code()
+
 		offset := 0
 		hasMore := true
 		for hasMore && offset < max_fetch_list_items {
+			start := time.Now()
 			params := &stremio_store_webdl.ListWebDLsParams{
 				Limit:    fetch_list_limit,
 				Offset:   offset,
@@ -95,11 +108,15 @@ func getWebDLCatalogItems(s store.Store, storeToken string, clientIp string, idP
 			params.APIKey = storeToken
 			res, err := stremio_store_webdl.ListWebDLs(params, s.GetName())
 			if err != nil {
-				log.Error("failed to list webdls", "error", err, "offset", offset)
+				log.Error("failed to list webdls", "error", err, "duration", time.Since(start).String(), "store_code", storeCode, "offset", offset)
 				break
 			}
+			count := len(res.Items)
+			log.Debug("fetched webdls", "duration", time.Since(start).String(), "store_code", storeCode, "offset", offset, "count", count)
 
-			for _, item := range res.Items {
+			start = time.Now()
+			for i := range res.Items {
+				item := &res.Items[i]
 				if item.Status == store.MagnetStatusDownloaded {
 					cItem := CachedCatalogItem{stremio.MetaPreview{
 						Id:          idPrefix + item.Id,
@@ -111,9 +128,12 @@ func getWebDLCatalogItems(s store.Store, storeToken string, clientIp string, idP
 					items = append(items, cItem)
 				}
 			}
+			log.Debug("processed webdls", "duration", time.Since(start).String(), "store_code", storeCode, "offset", offset, "count", count)
+
 			offset += fetch_list_limit
 			hasMore = len(res.Items) == fetch_list_limit && offset < res.TotalItems
-			time.Sleep(1 * time.Second)
+
+			time.Sleep(500 * time.Millisecond)
 		}
 		catalogCache.Add(cacheKey, items)
 	}
@@ -134,12 +154,15 @@ func getCatalogItems(s store.Store, storeToken string, clientIp string, idPrefix
 
 	cacheKey := getCatalogCacheKey(idPrefix, storeToken)
 	if !catalogCache.Get(cacheKey, &items) {
+		storeCode := s.GetName().Code()
+
 		tInfoItems := []torrent_info.TorrentInfoInsertData{}
-		tInfoSource := torrent_info.TorrentInfoSource(s.GetName().Code())
+		tInfoSource := torrent_info.TorrentInfoSource(storeCode)
 
 		offset := 0
 		hasMore := true
 		for hasMore {
+			start := time.Now()
 			params := &store.ListMagnetsParams{
 				Limit:    fetch_list_limit,
 				Offset:   offset,
@@ -148,10 +171,15 @@ func getCatalogItems(s store.Store, storeToken string, clientIp string, idPrefix
 			params.APIKey = storeToken
 			res, err := s.ListMagnets(params)
 			if err != nil {
+				log.Error("failed to list magnets", "error", err, "duration", time.Since(start).String(), "store_code", storeCode, "offset", offset)
 				break
 			}
+			count := len(res.Items)
+			log.Debug("fetched magnets", "duration", time.Since(start).String(), "store_code", storeCode, "offset", offset, "count", count)
 
-			for _, item := range res.Items {
+			start = time.Now()
+			for i := range res.Items {
+				item := &res.Items[i]
 				if item.Status == store.MagnetStatusDownloaded {
 					items = append(items, CachedCatalogItem{stremio.MetaPreview{
 						Id:          idPrefix + item.Id,
@@ -168,21 +196,23 @@ func getCatalogItems(s store.Store, storeToken string, clientIp string, idPrefix
 					Source:       tInfoSource,
 				})
 			}
+			log.Debug("processed magnets", "duration", time.Since(start).String(), "store_code", storeCode, "offset", offset, "count", count)
+
 			offset += fetch_list_limit
 			hasMore = len(res.Items) == fetch_list_limit && offset < res.TotalItems
 
 			if hasMore && offset >= max_fetch_list_items {
 				worker_queue.StoreCrawlerQueue.Queue(worker_queue.StoreCrawlerQueueItem{
-					StoreCode:  string(s.GetName().Code()),
+					StoreCode:  string(storeCode),
 					StoreToken: storeToken,
 				})
 				break
 			}
 
-			time.Sleep(1 * time.Second)
+			time.Sleep(500 * time.Millisecond)
 		}
 		catalogCache.Add(cacheKey, items)
-		go torrent_info.Upsert(tInfoItems, "", s.GetName().Code() != store.StoreCodeRealDebrid)
+		go torrent_info.Upsert(tInfoItems, "", storeCode != store.StoreCodeRealDebrid)
 	}
 
 	return items
@@ -284,6 +314,7 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 	items := getCatalogItems(ctx.Store, ctx.StoreAuthToken, ctx.ClientIP, getIdPrefix(idStoreCode), idr)
 
 	if extra.Search != "" {
+		start := time.Now()
 		normalizer := util.NewStringNormalizer()
 		query := normalizer.Normalize(extra.Search)
 		parts := whitespacesRegex.Split(query, -1)
@@ -312,6 +343,7 @@ func handleCatalog(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		items = filteredItems
+		log.Debug("filtered catalog items", "duration", time.Since(start).String())
 	}
 
 	limit := 100

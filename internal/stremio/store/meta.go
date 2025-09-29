@@ -398,7 +398,6 @@ func handleMeta(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if id == getStoreActionId(idStoreCode) {
-
 		res := stremio.MetaHandlerResponse{
 			Meta: getStoreActionMeta(r, idStoreCode, eud),
 		}
@@ -427,11 +426,15 @@ func handleMeta(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	storeCode := ctx.Store.GetName().Code()
+
+	start := time.Now()
 	cInfo, err := getStoreContentInfo(ctx.Store, ctx.StoreAuthToken, strings.TrimPrefix(id, idPrefix), ctx.ClientIP, idr)
 	if err != nil {
 		SendError(w, r, err)
 		return
 	}
+	log.Debug("fetched store content info", "duration", time.Since(start).String(), "store_code", storeCode)
 
 	meta := stremio.Meta{
 		Id:       id,
@@ -443,6 +446,7 @@ func handleMeta(w http.ResponseWriter, r *http.Request) {
 
 	sType, sId := "", ""
 
+	start = time.Now()
 	if idr.isUsenet {
 		meta.Description = getMetaPreviewDescriptionForUsenet(cInfo.Hash, cInfo.Name, cInfo.largestFilename)
 	} else if idr.isWebDL {
@@ -464,12 +468,15 @@ func handleMeta(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	log.Debug("generated meta preview description", "duration", time.Since(start).String())
 
 	metaVideoByKey := map[string]*stremio.MetaVideo{}
 	if sId != "" {
+		start = time.Now()
 		if r, err := fetchMeta(sType, sId, core.GetRequestIP(r)); err != nil {
 			log.Error("failed to fetch meta", "error", err)
 		} else {
+			log.Debug("fetched meta", "duration", time.Since(start).String(), "type", sType, "id", sId)
 			m := r.Meta
 			meta.Description += " " + m.Description
 			meta.Poster = m.Poster
@@ -501,7 +508,8 @@ func handleMeta(w http.ResponseWriter, r *http.Request) {
 		pttLog.Warn("failed to parse", "error", err, "title", cInfo.Name)
 	}
 
-	for _, f := range cInfo.Files {
+	for i := range cInfo.Files {
+		f := &cInfo.Files[i]
 		if !core.HasVideoExtension(f.Name) {
 			continue
 		}
