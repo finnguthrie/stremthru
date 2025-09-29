@@ -170,7 +170,7 @@ func handleStrem(w http.ResponseWriter, r *http.Request) {
 				log.Debug("matched file using fileidx", "fileidx", file.Idx, "filename", file.Name)
 			}
 		}
-		if file == nil && isIMDBId {
+		if file == nil && isIMDBId && (!strings.Contains(sid, ":") || len(videoFiles) == 1) {
 			if file = stremio_shared.MatchFileByLargestSize(videoFiles); file != nil {
 				log.Debug("matched file using largest size", "filename", file.Name)
 				shouldTagStream = len(videoFiles) == 1
