@@ -13,6 +13,8 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/jamespfennell/xz"
 )
 
 type aError struct {
@@ -63,15 +65,17 @@ func NewDataset(conf *DatasetConfig) *Dataset {
 		}
 	}
 
-	if conf.Archive != "" && conf.Archive != "gz" {
-		panic("Unsupported archive format: " + conf.Archive)
-	}
 	archive_ext := ""
 	if conf.Archive != "" {
-		archive_ext = "." + conf.Archive
-		if strings.HasSuffix(conf.Name, archive_ext) {
-			conf.Name = strings.TrimSuffix(conf.Name, archive_ext)
+		switch conf.Archive {
+		case "gz":
+		case "xz":
+		default:
+			panic("Unsupported archive format: " + conf.Archive)
 		}
+
+		archive_ext = "." + conf.Archive
+		conf.Name = strings.TrimSuffix(conf.Name, archive_ext)
 	}
 
 	ds := Dataset{
@@ -256,11 +260,8 @@ func (ds *Dataset) download() error {
 		ds.log.Info("found already downloaded", "filename", dlFilename)
 	}
 
-	if ds.archive_ext == "" {
-		return nil
-	}
-
-	if ds.archive_ext == ".gz" {
+	switch ds.archive_ext {
+	case ".gz":
 		ds.log.Info("extracting...", "filename", filename)
 		f, err := os.Open(dlFilePath)
 		if err != nil {
@@ -281,6 +282,30 @@ func (ds *Dataset) download() error {
 		defer out.Close()
 
 		_, err = io.Copy(out, gzr)
+		if err != nil {
+			return nil
+		}
+		ds.log.Info("extracted", "filename", filename)
+
+		ds.removeFile(dlFilename)
+	case ".xz":
+		ds.log.Info("extracting...", "filename", filename)
+		f, err := os.Open(dlFilePath)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		xzr := xz.NewReader(f)
+		defer xzr.Close()
+
+		out, err := os.Create(filePath)
+		if err != nil {
+			return err
+		}
+		defer out.Close()
+
+		_, err = io.Copy(out, xzr)
 		if err != nil {
 			return nil
 		}

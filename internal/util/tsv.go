@@ -14,11 +14,14 @@ func TSVGetValue[T any](row []string, idx int, defaultValue T, nilValue string) 
 	}
 
 	switch any(defaultValue).(type) {
+	case bool:
+		v, err := strconv.ParseBool(val)
+		return T(any(v).(T)), err
 	case int:
 		v, err := strconv.Atoi(val)
 		return T(any(v).(T)), err
-	case bool:
-		v, err := strconv.ParseBool(val)
+	case int64:
+		v, err := strconv.ParseInt(val, 10, 64)
 		return T(any(v).(T)), err
 	default:
 		return T(any(val).(T)), nil

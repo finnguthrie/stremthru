@@ -17,9 +17,11 @@ import (
 var mutex sync.Mutex
 var running_worker struct {
 	sync_anidb_titles           bool
+	sync_animetosho             bool
 	sync_bitmagnet              bool
 	sync_dmm_hashlist           bool
 	sync_imdb                   bool
+	map_anidb_torrent           bool
 	map_imdb_torrent            bool
 	sync_animeapi               bool
 	sync_anidb_tvdb_episode_map bool
@@ -249,6 +251,9 @@ func InitWorkers() func() {
 			mutex.Lock()
 			defer mutex.Unlock()
 
+			if running_worker.sync_animetosho {
+				return true, "sync_animetosho is running"
+			}
 			if running_worker.sync_bitmagnet {
 				return true, "sync_bitmagnet is running"
 			}
@@ -257,6 +262,9 @@ func InitWorkers() func() {
 			}
 			if running_worker.sync_imdb {
 				return true, "sync_imdb is running"
+			}
+			if running_worker.map_anidb_torrent {
+				return true, "map_anidb_torrent is running"
 			}
 			if running_worker.map_imdb_torrent {
 				return true, "map_imdb_torrent is running"
@@ -373,6 +381,9 @@ func InitWorkers() func() {
 
 			if running_worker.sync_imdb {
 				return true, "sync_imdb is running"
+			}
+			if running_worker.sync_animetosho {
+				return true, "sync_animetosho is running"
 			}
 			if running_worker.sync_bitmagnet {
 				return true, "sync_bitmagnet is running"
@@ -560,6 +571,12 @@ func InitWorkers() func() {
 			mutex.Lock()
 			defer mutex.Unlock()
 
+			if running_worker.sync_animetosho {
+				return true, "sync_animetosho is running"
+			}
+			if running_worker.sync_bitmagnet {
+				return true, "sync_bitmagnet is running"
+			}
 			if running_worker.sync_dmm_hashlist {
 				return true, "sync_dmm_hashlist is running"
 			}
@@ -567,23 +584,30 @@ func InitWorkers() func() {
 			if running_worker.sync_anidb_titles {
 				return true, "sync_anidb_titles is running"
 			}
-
 			if running_worker.sync_anidb_tvdb_episode_map {
 				return true, "sync_anidb_tvdb_episode_map is running"
 			}
-
 			if running_worker.sync_animeapi {
 				return true, "sync_animeapi is running"
 			}
-
 			if running_worker.sync_manami_anime_database {
 				return true, "sync_manami_anime_database is running"
 			}
 
 			return false, ""
 		},
-		OnStart: func() {},
-		OnEnd:   func() {},
+		OnStart: func() {
+			mutex.Lock()
+			defer mutex.Unlock()
+
+			running_worker.map_anidb_torrent = true
+		},
+		OnEnd: func() {
+			mutex.Lock()
+			defer mutex.Unlock()
+
+			running_worker.map_anidb_torrent = false
+		},
 	}); worker != nil {
 		workers = append(workers, worker)
 	}
@@ -633,6 +657,43 @@ func InitWorkers() func() {
 			defer mutex.Unlock()
 
 			running_worker.sync_bitmagnet = false
+		},
+	}); worker != nil {
+		workers = append(workers, worker)
+	}
+
+	if worker := InitSyncAnimeToshoWorker(&WorkerConfig{
+		Disabled:          !config.Feature.IsEnabled("anime"),
+		Name:              "sync-animetosho",
+		Interval:          24 * time.Hour,
+		RunAtStartupAfter: 90 * time.Second,
+		RunExclusive:      true,
+		ShouldWait: func() (bool, string) {
+			mutex.Lock()
+			defer mutex.Unlock()
+
+			if running_worker.sync_imdb {
+				return true, "sync_imdb is running"
+			}
+			if running_worker.sync_bitmagnet {
+				return true, "sync_bitmagnet is running"
+			}
+			if running_worker.sync_dmm_hashlist {
+				return true, "sync_dmm_hashlist is running"
+			}
+			return false, ""
+		},
+		OnStart: func() {
+			mutex.Lock()
+			defer mutex.Unlock()
+
+			running_worker.sync_animetosho = true
+		},
+		OnEnd: func() {
+			mutex.Lock()
+			defer mutex.Unlock()
+
+			running_worker.sync_animetosho = false
 		},
 	}); worker != nil {
 		workers = append(workers, worker)

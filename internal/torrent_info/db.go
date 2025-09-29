@@ -76,6 +76,7 @@ func (csi *CommaSeperatedInt) Scan(value any) error {
 type TorrentInfoSource string
 
 const (
+	TorrentInfoSourceAnimeTosho  TorrentInfoSource = "ato"
 	TorrentInfoSourceDHT         TorrentInfoSource = "dht"
 	TorrentInfoSourceDMM         TorrentInfoSource = "dmm"
 	TorrentInfoSourceMediaFusion TorrentInfoSource = "mfn"
@@ -663,8 +664,9 @@ var query_upsert_on_conflict = fmt.Sprintf(
 	` ON CONFLICT (%s) DO UPDATE SET %s, %s, %s, %s, %s, %s, %s`,
 	Column.Hash,
 	fmt.Sprintf(
-		"%s = CASE WHEN EXCLUDED.%s = 'dht' OR ti.%s NOT IN ('dht','tio','ad','dl','rd') THEN EXCLUDED.%s ELSE ti.%s END",
+		"%s = CASE WHEN EXCLUDED.%s = 'dht' OR (EXCLUDED.%s != 'ato' AND ti.%s NOT IN ('dht','tio','ad','dl','rd')) THEN EXCLUDED.%s ELSE ti.%s END",
 		Column.TorrentTitle,
+		Column.Source,
 		Column.Source,
 		Column.Source,
 		Column.TorrentTitle,
@@ -679,7 +681,8 @@ var query_upsert_on_conflict = fmt.Sprintf(
 		Column.Size,
 	),
 	fmt.Sprintf(
-		"%s = CASE WHEN EXCLUDED.%s = 'dht' OR ti.%s NOT IN ('dht','tio','ad','dl','rd') THEN EXCLUDED.%s ELSE ti.%s END",
+		"%s = CASE WHEN EXCLUDED.%s = 'dht' OR (EXCLUDED.%s != 'ato' AND ti.%s NOT IN ('dht','tio','ad','dl','rd')) THEN EXCLUDED.%s ELSE ti.%s END",
+		Column.Source,
 		Column.Source,
 		Column.Source,
 		Column.Source,

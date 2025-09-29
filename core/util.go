@@ -1,6 +1,8 @@
 package core
 
 import (
+	"encoding/base32"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -40,10 +42,25 @@ type MagnetLink struct {
 	RawLink  string
 }
 
+func NormalizeMagnetHash(hash string) string {
+	switch len(hash) {
+	case 40:
+		return strings.ToLower(hash)
+	case 32:
+		if decoded, err := base32.StdEncoding.WithPadding(base32.NoPadding).DecodeString(strings.ToUpper(hash)); err != nil {
+			return ""
+		} else {
+			return strings.ToLower(hex.EncodeToString(decoded))
+		}
+	default:
+		return ""
+	}
+}
+
 func ParseMagnetLink(value string) (MagnetLink, error) {
 	magnet := MagnetLink{}
 	if !strings.HasPrefix(value, "magnet:") {
-		magnet.Hash = strings.ToLower(value)
+		magnet.Hash = NormalizeMagnetHash(value)
 		magnet.Link = "magnet:?xt=urn:btih:" + magnet.Hash
 		magnet.RawLink = magnet.Link
 		return magnet, nil
@@ -60,7 +77,7 @@ func ParseMagnetLink(value string) (MagnetLink, error) {
 		return magnet, errors.New("invalid magnet")
 	}
 
-	magnet.Hash = strings.ToLower(strings.TrimPrefix(xt, "urn:btih:"))
+	magnet.Hash = NormalizeMagnetHash(strings.TrimPrefix(xt, "urn:btih:"))
 	magnet.Name = params.Get("dn")
 	if params.Has("tr") {
 		magnet.Trackers = params["tr"]
