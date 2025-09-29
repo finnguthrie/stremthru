@@ -53,6 +53,10 @@ func getFlatFiles(files []ResponseMagnetFile, result []MagnetFile, parent *Magne
 
 		if parent != nil {
 			file.Path = path.Join(parent.Path, file.Name)
+		} else if f.Children == nil {
+			file.Path = "/" + file.Name
+		} else {
+			file.Path = "/"
 		}
 
 		if f.Children == nil {
