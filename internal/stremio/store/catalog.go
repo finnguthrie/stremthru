@@ -27,13 +27,11 @@ type CachedCatalogItem struct {
 	Hash string
 }
 
-var catalogCache = func() cache.Cache[[]CachedCatalogItem] {
-	c := cache.NewCache[[]CachedCatalogItem](&cache.CacheConfig{
-		Lifetime: config.Stremio.Store.CatalogCacheTime,
-		Name:     "stremio:store:catalog",
-	})
-	return c
-}()
+var catalogCache = cache.NewCache[[]CachedCatalogItem](&cache.CacheConfig{
+	Lifetime:      config.Stremio.Store.CatalogCacheTime,
+	Name:          "stremio:store:catalog",
+	LocalCapacity: 2048,
+})
 
 var max_fetch_list_items = config.Stremio.Store.CatalogItemLimit
 
