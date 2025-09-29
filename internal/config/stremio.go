@@ -2,12 +2,18 @@ package config
 
 import (
 	"strings"
+	"time"
 
 	"github.com/MunifTanjim/stremthru/internal/util"
 )
 
 type stremioConfigList struct {
 	PublicMaxListCount int
+}
+
+type stremioConfigStore struct {
+	CatalogItemLimit int
+	CatalogCacheTime time.Duration
 }
 
 type stremioConfigTorz struct {
@@ -21,15 +27,20 @@ type stremioConfigWrap struct {
 }
 
 type StremioConfig struct {
-	List stremioConfigList
-	Torz stremioConfigTorz
-	Wrap stremioConfigWrap
+	List  stremioConfigList
+	Store stremioConfigStore
+	Torz  stremioConfigTorz
+	Wrap  stremioConfigWrap
 }
 
 func parseStremio() StremioConfig {
 	stremio := StremioConfig{
 		List: stremioConfigList{
 			PublicMaxListCount: util.MustParseInt(getEnv("STREMTHRU_STREMIO_LIST_PUBLIC_MAX_LIST_COUNT")),
+		},
+		Store: stremioConfigStore{
+			CatalogItemLimit: util.MustParseInt(getEnv("STREMTHRU_STREMIO_STORE_CATALOG_ITEM_LIMIT")),
+			CatalogCacheTime: mustParseDuration("store catalog cache time", getEnv("STREMTHRU_STREMIO_STORE_CATALOG_CACHE_TIME"), 1*time.Minute),
 		},
 		Torz: stremioConfigTorz{
 			LazyPull:            strings.ToLower(getEnv("STREMTHRU_STREMIO_TORZ_LAZY_PULL")) == "true",

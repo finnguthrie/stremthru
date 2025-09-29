@@ -229,6 +229,14 @@ Otherwise only the specified features will be enabled.
 
 Max number of list allowed on public instance.
 
+#### `STREMTHRU_STREMIO_STORE_CATALOG_ITEM_LIMIT`
+
+Max number of items to fetch for catalog.
+
+#### `STREMTHRU_STREMIO_STORE_CATALOG_CACHE_TIME`
+
+Cache time for catalog.
+
 #### `STREMTHRU_STREMIO_TORZ_LAZY_PULL`
 
 If `true`, torz will pull from public database in the background,

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/MunifTanjim/stremthru/internal/cache"
+	"github.com/MunifTanjim/stremthru/internal/config"
 	"github.com/MunifTanjim/stremthru/internal/shared"
 	stremio_shared "github.com/MunifTanjim/stremthru/internal/stremio/shared"
 	stremio_store_usenet "github.com/MunifTanjim/stremthru/internal/stremio/store/usenet"
@@ -28,13 +29,14 @@ type CachedCatalogItem struct {
 
 var catalogCache = func() cache.Cache[[]CachedCatalogItem] {
 	c := cache.NewCache[[]CachedCatalogItem](&cache.CacheConfig{
-		Lifetime: 10 * time.Minute,
+		Lifetime: config.Stremio.Store.CatalogCacheTime,
 		Name:     "stremio:store:catalog",
 	})
 	return c
 }()
 
-const max_fetch_list_items = 2000
+var max_fetch_list_items = config.Stremio.Store.CatalogItemLimit
+
 const fetch_list_limit = 500
 
 func getUsenetCatalogItems(s store.Store, storeToken string, clientIp string, idPrefix string) []CachedCatalogItem {

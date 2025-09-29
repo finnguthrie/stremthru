@@ -73,6 +73,8 @@ var defaultValueByEnv = map[string]map[string]string{
 		"STREMTHRU_INTEGRATION_TRAKT_LIST_STALE_TIME":      "12h",
 		"STREMTHRU_INTEGRATION_TVDB_LIST_STALE_TIME":       "12h",
 		"STREMTHRU_STREMIO_LIST_PUBLIC_MAX_LIST_COUNT":     "10",
+		"STREMTHRU_STREMIO_STORE_CATALOG_ITEM_LIMIT":       "2000",
+		"STREMTHRU_STREMIO_STORE_CATALOG_CACHE_TIME":       "10m",
 		"STREMTHRU_STREMIO_TORZ_PUBLIC_MAX_STORE_COUNT":    "3",
 		"STREMTHRU_STREMIO_WRAP_PUBLIC_MAX_UPSTREAM_COUNT": "5",
 		"STREMTHRU_STREMIO_WRAP_PUBLIC_MAX_STORE_COUNT":    "3",
@@ -821,6 +823,9 @@ func PrintConfig(state *AppState) {
 		switch feature {
 		case FeatureStremioList:
 			l.Println("       public max list count: " + strconv.Itoa(Stremio.List.PublicMaxListCount))
+		case FeatureStremioStore:
+			l.Println("          catalog item limit: " + strconv.Itoa(Stremio.Store.CatalogItemLimit))
+			l.Println("          catalog cache time: " + Stremio.Store.CatalogCacheTime.String())
 		case FeatureStremioTorz:
 			l.Println("      public max store count: " + strconv.Itoa(Stremio.Torz.PublicMaxStoreCount))
 			if Stremio.Torz.LazyPull {
