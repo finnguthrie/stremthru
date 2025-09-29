@@ -396,6 +396,18 @@ func getUserData(r *http.Request, isAuthed bool) (*UserData, error) {
 					}
 					listType := parts[1]
 					list.Id = tmdb.ID_PREFIX_DYNAMIC_COMPANY + companyId + ":" + listType
+				case strings.HasPrefix(listUrl.Path, "/network/"):
+					identifier := strings.Trim(strings.TrimPrefix(listUrl.Path, "/network/"), "/")
+					if strings.Contains(identifier, "/") {
+						udErr.list_urls[idx] = "Invalid TMDB URL"
+						continue
+					}
+					networkId, _, _ := strings.Cut(identifier, "-")
+					if !util.IsNumericString(networkId) {
+						udErr.list_urls[idx] = "Invalid TMDB URL"
+						continue
+					}
+					list.Id = tmdb.ID_PREFIX_DYNAMIC_NETWORK + networkId
 				case strings.HasPrefix(listUrl.Path, "/list/"):
 					parts := strings.SplitN(strings.TrimPrefix(listUrl.Path, "/list/"), "-", 2)
 					if !util.IsNumericString(parts[0]) {

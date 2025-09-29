@@ -164,6 +164,8 @@ func GetManifest(r *http.Request, ud *UserData) (*stremio.Manifest, error) {
 					if list.IsCompanySpecific() {
 						_, _mediaType, _ := strings.Cut(strings.TrimPrefix(idStr, tmdb.ID_PREFIX_DYNAMIC_COMPANY), ":")
 						mediaType = tmdb.MediaType(_mediaType)
+					} else if list.IsNetworkSpecific() {
+						mediaType = tmdb.MediaTypeTVShow
 					} else {
 						meta := tmdb.GetDynamicListMeta(idStr)
 						mediaType = meta.MediaType

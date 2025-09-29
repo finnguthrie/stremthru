@@ -640,3 +640,56 @@ func fetchCompanyList(client *APIClient, companyId string, mediaType MediaType) 
 	}
 	return &l, nil
 }
+
+func fetchNetworkListItems(client *APIClient, networkId string, page int) (*PaginatedResult[ListItem], error) {
+	data := PaginatedResult[ListItem]{}
+	log.Debug("fetching network list page", "network_id", networkId, "page", page)
+	res, err := client.DiscoverTV(&DiscoverTVParams{
+		IncludeAdult: true,
+		Page:         page,
+		WithNetworks: util.SafeParseInt(networkId, -1),
+	})
+	if err != nil {
+		return nil, err
+	}
+	data.Page = res.Data.Page
+	data.TotalPages = res.Data.TotalPages
+	data.TotalResults = res.Data.TotalResults
+	for i := range res.Data.Results {
+		data.Results = append(data.Results, ListItem{
+			MediaType: MediaTypeTVShow,
+			data:      &res.Data.Results[i],
+		})
+	}
+	return &data, nil
+}
+
+func fetchNetworkList(client *APIClient, networkId string) (*List, error) {
+	l := List{
+		Name:      "",
+		Public:    true,
+		ItemCount: 0,
+	}
+	network, err := client.FetchNetwork(&FetchNetworkParams{
+		Id: util.SafeParseInt(networkId, -1),
+	})
+	if err != nil {
+		return nil, err
+	}
+	l.Name = network.Data.Name
+
+	page := 0
+	for {
+		page++
+		res, err := fetchNetworkListItems(client, networkId, page)
+		if err != nil {
+			return nil, err
+		}
+		l.ItemCount = res.TotalResults
+		l.Results = append(l.Results, res.Results...)
+		if res.TotalPages == page {
+			break
+		}
+	}
+	return &l, nil
+}

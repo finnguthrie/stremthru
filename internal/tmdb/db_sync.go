@@ -36,6 +36,14 @@ func syncList(l *TMDBList, tokenId string) error {
 			if err != nil {
 				return err
 			}
+		} else if l.IsNetworkSpecific() {
+			log.Debug("fetching network list by id", "id", l.Id)
+			networkId := strings.TrimPrefix(l.Id, ID_PREFIX_DYNAMIC_NETWORK)
+			var err error
+			list, err = fetchNetworkList(client, networkId)
+			if err != nil {
+				return err
+			}
 		} else {
 			log.Debug("fetching dynamic list by id", "id", l.Id)
 			meta := GetDynamicListMeta(l.Id)

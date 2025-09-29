@@ -44,6 +44,7 @@ type DiscoverTVParams struct {
 	Page          int
 	SortBy        string
 	WithCompanies string // can be a comma (AND) or pipe (OR) separated query
+	WithNetworks  int
 }
 
 func (c APIClient) DiscoverTV(params *DiscoverTVParams) (APIResponse[FetchDiscoverTVData], error) {
@@ -59,6 +60,9 @@ func (c APIClient) DiscoverTV(params *DiscoverTVParams) (APIResponse[FetchDiscov
 	}
 	if params.WithCompanies != "" {
 		query.Set("with_companies", params.WithCompanies)
+	}
+	if params.WithNetworks != 0 {
+		query.Set("with_networks", strconv.Itoa(params.WithNetworks))
 	}
 	params.Query = &query
 
