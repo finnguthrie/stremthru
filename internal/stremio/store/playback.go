@@ -5,12 +5,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MunifTanjim/stremthru/internal/cache"
 	"github.com/MunifTanjim/stremthru/internal/config"
 	"github.com/MunifTanjim/stremthru/internal/shared"
 	store_video "github.com/MunifTanjim/stremthru/internal/store/video"
 	stremio_store_usenet "github.com/MunifTanjim/stremthru/internal/stremio/store/usenet"
 	stremio_store_webdl "github.com/MunifTanjim/stremthru/internal/stremio/store/webdl"
 )
+
+var stremLinkCache = cache.NewCache[string](&cache.CacheConfig{
+	Name:     "stremio:store:streamLink",
+	Lifetime: 3 * time.Hour,
+})
 
 func handleStrem(w http.ResponseWriter, r *http.Request) {
 	if !IsMethod(r, http.MethodGet) && !IsMethod(r, http.MethodHead) {
@@ -57,6 +63,15 @@ func handleStrem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cacheKey := strings.Join([]string{ctx.ClientIP, idr.getStoreCode(), ctx.StoreAuthToken, url}, ":")
+
+	stremLink := ""
+	if stremLinkCache.Get(cacheKey, &stremLink) {
+		log.Debug("redirecting to cached stream link")
+		http.Redirect(w, r, stremLink, http.StatusFound)
+		return
+	}
+
 	if idr.isUsenet {
 		storeName := ctx.Store.GetName()
 		rParams := &stremio_store_usenet.GenerateLinkParams{
@@ -86,6 +101,7 @@ func handleStrem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		stremLinkCache.Add(cacheKey, data.Link)
 		http.Redirect(w, r, data.Link, http.StatusFound)
 	} else if idr.isWebDL || videoId == WEBDL_META_ID_INDICATOR {
 		storeName := ctx.Store.GetName()
@@ -120,6 +136,7 @@ func handleStrem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		stremLinkCache.Add(cacheKey, data.Link)
 		http.Redirect(w, r, data.Link, http.StatusFound)
 	} else {
 		stLink, err := shared.GenerateStremThruLink(r, ctx, url)
@@ -129,6 +146,7 @@ func handleStrem(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		stremLinkCache.Add(cacheKey, stLink.Link)
 		http.Redirect(w, r, stLink.Link, http.StatusFound)
 	}
 }
