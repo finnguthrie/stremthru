@@ -526,6 +526,12 @@ var executeTemplate = func() stremio_template.Executor[TemplateData] {
 							"/company/3268-hbo/tv",
 						},
 					},
+					{
+						Pattern: "/network/{network_id}",
+						Examples: []string{
+							"/network/49-hbo",
+						},
+					},
 				},
 			})
 		}
