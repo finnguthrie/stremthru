@@ -3,6 +3,7 @@ package stremio_torz
 import (
 	"errors"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -303,7 +304,7 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 			}
 			steamUrl := streamBaseUrl.JoinPath(strings.ToLower(storeCode), hash, strconv.Itoa(wStream.R.File.Idx), "/")
 			if wStream.R.File.Name != "" {
-				steamUrl = steamUrl.JoinPath(wStream.R.File.Name)
+				steamUrl = steamUrl.JoinPath(url.PathEscape(wStream.R.File.Name))
 			}
 			stream.URL = steamUrl.String()
 			stream.InfoHash = ""
@@ -331,7 +332,7 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 
 				steamUrl := streamBaseUrl.JoinPath(string(storeCode), hash, strconv.Itoa(wStream.R.File.Idx), "/")
 				if wStream.R.File.Name != "" {
-					steamUrl = steamUrl.JoinPath(wStream.R.File.Name)
+					steamUrl = steamUrl.JoinPath(url.PathEscape(wStream.R.File.Name))
 				}
 				stream.URL = steamUrl.String()
 				stream.InfoHash = ""
