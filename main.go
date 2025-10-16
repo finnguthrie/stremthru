@@ -29,7 +29,9 @@ func main() {
 	database := db.Open()
 	defer db.Close()
 	db.Ping()
-	RunSchemaMigration(database.URI, database)
+
+	// TEMPORARILY DISABLE SCHEMA MIGRATION TO ALLOW BUILD
+	// RunSchemaMigration(database.URI, database)
 
 	stopWorkers := worker.InitWorkers()
 	defer stopWorkers()
