@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+	// Print app configuration
 	config.PrintConfig(&config.AppState{
 		StoreNames: []string{
 			string(store.StoreNameAlldebrid),
@@ -26,18 +27,17 @@ func main() {
 		},
 	})
 
-	database := db.Open()
+	// Open database
+	db.Open()
 	defer db.Close()
 	db.Ping()
 
-	// TEMPORARILY DISABLE SCHEMA MIGRATION TO ALLOW BUILD
-	// RunSchemaMigration(database.URI, database)
-
+	// Initialize background workers
 	stopWorkers := worker.InitWorkers()
 	defer stopWorkers()
 
+	// Setup HTTP routes
 	mux := http.NewServeMux()
-
 	endpoint.AddRootEndpoint(mux)
 	endpoint.AddAuthEndpoints(mux)
 	endpoint.AddHealthEndpoints(mux)
@@ -51,12 +51,15 @@ func main() {
 
 	handler := shared.RootServerContext(mux)
 
+	// Configure server address
 	addr := ":" + config.Port
 	if config.Environment == config.EnvDev {
 		addr = "localhost" + addr
 	}
+
 	server := &http.Server{Addr: addr, Handler: handler}
 
+	// Disable keep-alive if no password is set
 	if len(config.ProxyAuthPassword) == 0 {
 		server.SetKeepAlivesEnabled(false)
 	}
