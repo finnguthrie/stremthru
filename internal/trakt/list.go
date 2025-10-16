@@ -580,6 +580,10 @@ func (c APIClient) fetchDynamicListItems(params *fetchDynamicListItemsParams) (A
 			}
 		}
 
+		if err != nil {
+			break
+		}
+
 		hasMore = !meta.NoPage && page < maxPage && res.Header.Get("X-Pagination-Page") != res.Header.Get("X-Pagination-Page-Count")
 		page++
 	}
