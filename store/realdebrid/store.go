@@ -275,6 +275,9 @@ func (c *StoreClient) AddMagnet(params *store.AddMagnetParams) (*store.AddMagnet
 		Ctx: params.Ctx,
 		Id:  t.Id,
 	})
+	if err != nil {
+		return nil, err
+	}
 	data := &store.AddMagnetData{
 		Id:      t.Id,
 		Hash:    magnet.Hash,
