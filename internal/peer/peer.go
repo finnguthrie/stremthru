@@ -16,13 +16,10 @@ import (
 	"github.com/MunifTanjim/stremthru/store"
 )
 
-var DefaultHTTPClient = func() *http.Client {
-	transport := config.DefaultHTTPTransport.Clone()
-	transport.Proxy = config.Tunnel.GetProxy(config.TUNNEL_TYPE_NONE)
-	return &http.Client{
-		Transport: transport,
-		Timeout:   60 * time.Second,
-	}
+var defaultHTTPClient = func() *http.Client {
+	client := config.GetHTTPClient(config.TUNNEL_TYPE_NONE)
+	client.Timeout = 30 * time.Second
+	return client
 }()
 
 type APIClientConfig struct {
@@ -50,7 +47,7 @@ func NewAPIClient(conf *APIClientConfig) *APIClient {
 	}
 
 	if conf.HTTPClient == nil {
-		conf.HTTPClient = DefaultHTTPClient
+		conf.HTTPClient = defaultHTTPClient
 	}
 
 	c := &APIClient{}
