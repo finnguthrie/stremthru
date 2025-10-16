@@ -15,6 +15,7 @@ import (
 
 	"github.com/MunifTanjim/stremthru/core"
 	"github.com/MunifTanjim/stremthru/internal/util"
+	"github.com/MunifTanjim/stremthru/store"
 	"github.com/google/uuid"
 )
 
@@ -416,9 +417,12 @@ var config = func() Config {
 	storeAuthTokenMap := make(StoreAuthTokenMap)
 	for _, userStoreToken := range storeAlldebridTokenList {
 		if user, storeToken, ok := strings.Cut(userStoreToken, ":"); ok {
-			if store, token, ok := strings.Cut(storeToken, ":"); ok {
-				storeAuthTokenMap.addStore(user, store)
-				storeAuthTokenMap.setToken(user, store, token)
+			if storeName, token, ok := strings.Cut(storeToken, ":"); ok {
+				if !store.StoreName(storeName).IsValid() {
+					log.Fatalf("invalid store name: %s", storeName)
+				}
+				storeAuthTokenMap.addStore(user, storeName)
+				storeAuthTokenMap.setToken(user, storeName, token)
 			}
 		}
 	}

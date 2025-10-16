@@ -65,8 +65,13 @@ func (sn StoreName) Code() StoreCode {
 	return storeCodeByName[sn]
 }
 
+func (sn StoreName) IsValid() bool {
+	_, ok := storeCodeByName[sn]
+	return ok
+}
+
 func (sn StoreName) Validate() (StoreName, *core.StoreError) {
-	if _, ok := storeCodeByName[sn]; !ok {
+	if !sn.IsValid() {
 		return sn, ErrorInvalidStoreName(string(sn))
 	}
 	return sn, nil
@@ -74,6 +79,11 @@ func (sn StoreName) Validate() (StoreName, *core.StoreError) {
 
 func (sc StoreCode) Name() StoreName {
 	return storeNameByCode[sc]
+}
+
+func (sc StoreCode) IsValid() bool {
+	_, ok := storeNameByCode[sc]
+	return ok
 }
 
 type UserSubscriptionStatus string
